@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>품질 현황 파악을 위한 현장 설문 조사</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo', sans-serif; background: #f5f6fa; color: #1a1a2e; min-height: 100vh; }
+.header { background: #1a3a6b; color: white; padding: 0; }
+.header-inner { max-width: 760px; margin: 0 auto; padding: 36px 24px 32px; }
+.header-badge { display: inline-block; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); border-radius: 20px; font-size: 12px; padding: 4px 12px; margin-bottom: 14px; letter-spacing: 0.3px; }
+.header h1 { font-size: 22px; font-weight: 600; line-height: 1.4; margin-bottom: 10px; }
+.header p { font-size: 14px; line-height: 1.7; opacity: 0.82; }
+.required-note { font-size: 12px; margin-top: 10px; opacity: 0.7; }
+.progress-bar-wrap { background: rgba(255,255,255,0.15); border-radius: 4px; height: 4px; margin-top: 20px; }
+.progress-bar { background: #64b5f6; height: 4px; border-radius: 4px; transition: width 0.4s ease; width: 0%; }
+.container { max-width: 760px; margin: 0 auto; padding: 24px 16px 60px; }
+.section-card { background: white; border-radius: 12px; border: 1px solid #e8eaf0; margin-bottom: 20px; overflow: hidden; }
+.section-header { background: #f0f4ff; border-bottom: 1px solid #e0e6f5; padding: 14px 20px; display: flex; align-items: center; gap: 10px; }
+.section-badge { background: #1a3a6b; color: white; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 10px; letter-spacing: 0.3px; }
+.section-title { font-size: 14px; font-weight: 600; color: #1a3a6b; }
+.section-body { padding: 0; }
+.q-block { padding: 18px 20px; border-bottom: 1px solid #f0f2f7; transition: opacity 0.25s, background 0.25s; }
+.q-block:last-child { border-bottom: none; }
+.q-block.disabled { opacity: 0.38; pointer-events: none; background: #fafafa; }
+.q-label { font-size: 14px; font-weight: 500; color: #1a1a2e; margin-bottom: 12px; line-height: 1.6; display: flex; gap: 6px; align-items: flex-start; }
+.q-num { color: #1a3a6b; font-weight: 600; font-size: 13px; min-width: 32px; padding-top: 1px; }
+.required-star { color: #d32f2f; margin-left: 2px; }
+.options-list { display: flex; flex-direction: column; gap: 8px; padding-left: 38px; }
+.option-item { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 8px 12px; border-radius: 8px; border: 1px solid transparent; transition: all 0.15s; font-size: 13.5px; color: #333; }
+.option-item:hover { background: #f0f4ff; border-color: #c5d0e8; }
+.option-item.selected { background: #e8eeff; border-color: #1a3a6b; color: #1a3a6b; font-weight: 500; }
+.option-item input { accent-color: #1a3a6b; width: 16px; height: 16px; flex-shrink: 0; }
+.checkbox-item input[type=checkbox] { accent-color: #1a3a6b; }
+.text-input-wrap { padding-left: 38px; }
+.text-input { width: 100%; border: 1px solid #d8dde8; border-radius: 8px; padding: 10px 14px; font-size: 14px; outline: none; transition: border-color 0.15s; font-family: inherit; background: #fafbff; }
+.text-input:focus { border-color: #1a3a6b; background: white; }
+.scale-wrap { padding-left: 38px; display: flex; align-items: center; gap: 0; flex-wrap: wrap; gap: 8px; }
+.scale-label { font-size: 12px; color: #888; white-space: nowrap; }
+.scale-btns { display: flex; gap: 6px; }
+.scale-btn { width: 40px; height: 40px; border: 1.5px solid #d0d5e5; border-radius: 8px; background: white; cursor: pointer; font-size: 14px; font-weight: 500; color: #555; transition: all 0.15s; }
+.scale-btn:hover { border-color: #1a3a6b; color: #1a3a6b; background: #f0f4ff; }
+.scale-btn.selected { background: #1a3a6b; border-color: #1a3a6b; color: white; }
+.competitor-table { padding-left: 38px; overflow-x: auto; }
+.comp-table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 480px; }
+.comp-table th { background: #f0f4ff; color: #1a3a6b; font-weight: 600; padding: 8px 10px; text-align: center; border: 1px solid #dde3f0; font-size: 12px; white-space: nowrap; }
+.comp-table td { padding: 8px 10px; border: 1px solid #e8eaf0; text-align: center; }
+.comp-table td:first-child { text-align: left; font-weight: 500; color: #333; }
+.comp-table tr:nth-child(even) td { background: #fafbff; }
+.comp-table input[type=radio] { accent-color: #1a3a6b; width: 15px; height: 15px; cursor: pointer; }
+.textarea-input { width: 100%; border: 1px solid #d8dde8; border-radius: 8px; padding: 12px 14px; font-size: 14px; outline: none; resize: vertical; min-height: 90px; font-family: inherit; background: #fafbff; }
+.textarea-input:focus { border-color: #1a3a6b; background: white; }
+.submit-area { text-align: center; margin-top: 28px; }
+.submit-btn { background: #1a3a6b; color: white; border: none; padding: 14px 48px; font-size: 15px; font-weight: 600; border-radius: 10px; cursor: pointer; transition: background 0.15s, transform 0.1s; font-family: inherit; }
+.submit-btn:hover { background: #12285a; }
+.submit-btn:active { transform: scale(0.98); }
+.error-msg { color: #d32f2f; font-size: 12px; margin-top: 6px; padding-left: 38px; display: none; }
+
+/* ── 관리자 버튼 ── */
+.admin-toggle { position: fixed; bottom: 20px; right: 20px; background: #1a3a6b; color: white; border: none; padding: 10px 18px; border-radius: 24px; cursor: pointer; font-size: 13px; font-family: inherit; font-weight: 500; box-shadow: 0 2px 12px rgba(26,58,107,0.3); z-index: 100; }
+
+/* ── 모달 공통 ── */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.52); z-index: 200; align-items: center; justify-content: center; }
+.modal-overlay.active { display: flex; }
+.modal-box { background: white; border-radius: 16px; padding: 32px 28px; width: 92%; max-width: 440px; }
+.modal-box h2 { font-size: 17px; color: #1a3a6b; margin-bottom: 6px; font-weight: 600; }
+.modal-box p { font-size: 13px; color: #777; margin-bottom: 18px; }
+.modal-input { width: 100%; border: 1.5px solid #d0d5e5; border-radius: 8px; padding: 10px 14px; font-size: 14px; font-family: inherit; outline: none; }
+.modal-input:focus { border-color: #1a3a6b; }
+.modal-btn-row { display: flex; gap: 10px; margin-top: 16px; }
+.modal-btn { flex: 1; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; border: none; }
+.modal-btn.primary { background: #1a3a6b; color: white; }
+.modal-btn.primary:hover { background: #12285a; }
+.modal-btn.secondary { background: #f0f2f7; color: #555; border: 1px solid #dde; }
+.modal-pw-err { color: #d32f2f; font-size: 12px; margin-top: 8px; display: none; }
+
+/* ── 관리자 패널(전체화면 모달) ── */
+.admin-modal { display: none; position: fixed; inset: 0; background: white; z-index: 300; overflow-y: auto; }
+.admin-modal.active { display: block; }
+.admin-header { background: #1a3a6b; color: white; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+.admin-header h2 { font-size: 16px; font-weight: 600; }
+.admin-close { background: rgba(255,255,255,0.18); border: none; color: white; padding: 7px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; font-family: inherit; font-weight: 500; }
+.admin-body { max-width: 1100px; margin: 0 auto; padding: 24px 20px 60px; }
+.admin-stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.stat-card { background: #f0f4ff; border-radius: 10px; padding: 16px 18px; }
+.stat-card .stat-label { font-size: 12px; color: #5a6a8a; margin-bottom: 6px; }
+.stat-card .stat-val { font-size: 22px; font-weight: 600; color: #1a3a6b; }
+.admin-toolbar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+.admin-toolbar input { flex: 1; min-width: 160px; border: 1px solid #d0d5e5; border-radius: 8px; padding: 8px 12px; font-size: 13px; font-family: inherit; outline: none; }
+.admin-toolbar input:focus { border-color: #1a3a6b; }
+.dl-btn { background: #1a7a4e; color: white; border: none; padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; }
+.dl-btn:hover { background: #125e3a; }
+.clr-btn { background: #fff0f0; color: #c0392b; border: 1px solid #fcc; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; white-space: nowrap; }
+.set-pw-btn { background: #eef2ff; color: #1a3a6b; border: 1px solid #c5d0e8; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; white-space: nowrap; }
+.resp-table-wrap { overflow-x: auto; border: 1px solid #e0e5f0; border-radius: 10px; }
+.resp-table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 900px; }
+.resp-table thead th { background: #1a3a6b; color: white; padding: 10px 12px; text-align: left; white-space: nowrap; font-weight: 500; position: sticky; top: 0; }
+.resp-table tbody tr:nth-child(even) td { background: #f8f9fd; }
+.resp-table tbody tr:hover td { background: #eef2ff; }
+.resp-table td { padding: 9px 12px; border-bottom: 1px solid #eee; color: #333; vertical-align: top; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.resp-table td.long { max-width: 260px; }
+.del-row-btn { background: #fff0f0; color: #c0392b; border: 1px solid #fcc; padding: 3px 9px; border-radius: 5px; font-size: 11px; cursor: pointer; font-family: inherit; }
+.empty-msg { text-align: center; padding: 48px 20px; color: #aaa; font-size: 14px; }
+
+/* ── 제출 완료 ── */
+.success-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 400; align-items: center; justify-content: center; }
+.success-box { background: white; border-radius: 16px; padding: 36px 32px; text-align: center; max-width: 380px; margin: 0 16px; }
+.success-icon { font-size: 48px; margin-bottom: 14px; }
+.success-box h2 { font-size: 18px; color: #1a3a6b; margin-bottom: 8px; }
+.success-box p { font-size: 14px; color: #666; line-height: 1.6; }
+.close-success { margin-top: 20px; background: #1a3a6b; color: white; border: none; padding: 10px 28px; border-radius: 8px; cursor: pointer; font-size: 14px; font-family: inherit; font-weight: 500; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="header-badge">현장 품질 설문</div>
+    <h1>품질 현황 파악을 위한 현장 설문 조사</h1>
+    <p>본 설문은 보일러 박스 젖음 현상 및 CO 경보기 배터리 소진 관련 현장 경험을 파악하기 위해 실시됩니다.<br>응답 내용은 제품 품질 개선 목적으로만 활용되며 익명으로 처리됩니다.</p>
+    <p class="required-note">★ 표시 항목은 필수입니다.</p>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- A -->
+  <div class="section-card">
+    <div class="section-header"><span class="section-badge">A</span><span class="section-title">기본 정보</span></div>
+    <div class="section-body">
+      <div class="q-block">
+        <div class="q-label"><span class="q-num">A-1</span>대리점명 <span class="required-star">★</span></div>
+        <div class="text-input-wrap"><input type="text" class="text-input" id="agencyName" placeholder="대리점명을 입력해 주세요" /></div>
+        <div class="error-msg" id="err-agencyName">대리점명을 입력해 주세요.</div>
+      </div>
+      <div class="q-block">
+        <div class="q-label"><span class="q-num">A-2</span>직무 <span class="required-star">★</span></div>
+        <div class="options-list">
+          <label class="option-item"><input type="radio" name="job" value="영업/설치"> 영업 / 설치</label>
+          <label class="option-item"><input type="radio" name="job" value="AS/기술"> AS / 기술</label>
+          <label class="option-item"><input type="radio" name="job" value="물류/창고"> 물류 / 창고</label>
+          <label class="option-item"><input type="radio" name="job" value="대리점주/관리자"> 대리점주 / 관리자</label>
+          <label class="option-item"><input type="radio" name="job" value="기타" data-etc-id="job-etc"> 기타</label>
+        </div>
+        <div id="job-etc" style="display:none; padding-left:38px; margin-top:8px; margin-bottom:4px;">
+          <input type="text" class="text-input" id="job-etc-text" placeholder="직무를 입력해 주세요" />
+        </div>
+        <div class="error-msg" id="err-job">직무를 선택해 주세요.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- B -->
+  <div class="section-card">
+    <div class="section-header"><span class="section-badge">B</span><span class="section-title">박스 젖음 현상 경험</span></div>
+    <div class="section-body">
+      <div class="q-block">
+        <div class="q-label"><span class="q-num">B-1</span>당사 보일러 제품 수령 또는 설치 시 박스가 젖어 있는 현상을 경험하신 적이 있습니까? <span class="required-star">★</span></div>
+        <div class="options-list">
+          <label class="option-item"><input type="radio" name="b1" value="예, 경험한 적 있습니다"> 예, 경험한 적 있습니다</label>
+          <label class="option-item"><input type="radio" name="b1" value="아니요, 경험한 적 없습니다"> 아니요, 경험한 적 없습니다</label>
+        </div>
+        <div class="error-msg" id="err-b1">응답을 선택해 주세요.</div>
+      </div>
+      <div class="q-block">
+        <div class="q-label"><span class="q-num">B-2</span>최근 6개월간 수령한 제품 중 박스가 젖어 있는 경우의 대략적인 비율은 어느 정도였습니까?</div>
+        <div class="options-list">
+          <label class="option-item"><input type="radio" name="b2" value="경험 없음"> 경험 없음</label>
+          <label class="option-item"><input type="radio" name="b2" value="5% 미만"> 5% 미만 (100개 중 5개 이하)</label>
+          <label class="option-item"><input type="radio" name="b2" value="5% 이상 ~ 10% 미만"> 5% 이상 ~ 10% 미만</label>
+          <label class="option-item"><input type="radio" name="b2" value="10% 이상 ~ 20% 미만"> 10% 이상 ~ 20% 미만</label>
+          <label class="option-item"><input type="radio" name="b2" value="20% 이상 ~ 30% 미만"> 20% 이상 ~ 30% 미만</label>
+          <label class="option-item"><input type="radio" name="b2" value="30% 이상"> 30% 이상</label>
+        </div>
+      </div>
+      <div class="q-block">
+        <div class="q-label"><span class="q-num">B-3</span>박스 젖음이 주로 발견되는 시점은 언제입니까? <span style="font-size:12px;color:#888;">(복수 선택 가능)</span></div>
+        <div class="options-list">
+          <label class="option-item checkbox-item"><input type="checkbox" name="b3" value="물류 창고/대리점 입고 시"> 물류 창고 / 대리점 입고 시</label>
+          <label class="option-item checkbox-item"><input type="checkbox" name="b3" value="고객 납품/배송 완료 후"> 고객 납품 / 배송 완료 후</label>
+          <label class="option-item checkbox-item"><input type="checkbox" name="b3" value="현장 설치 전 포장 개봉 시"> 현장 설치 전 포장 개봉 시</label>
+          <label class="option-item checkbox-item"><input type="checkbox" name="b3" value="고객이 직접 개봉 후 민원 접수"> 고객이 직접 개봉 후 민원 접수</label>
+          <label class="option-item checkbox-item"><input type="checkbox" name="b3" value="기타" data-etc-id="b3-etc"> 기타</label>
+        </div>
+        <div id="b3-etc" style="display:none; padding-left:38px; margin-top:8px; margin-bottom:4px;">
+          <input type="text" class="text-input" id="b3-etc-text" placeholder="기타 발견 시점을 입력해 주세요" />
+        </div>
+      </div>
+      <div class="q-block">
+        <div class="q-label"><span class="q-num">B-4</span>박스 젖음의 정도를 전반적으로 어떻게 평가하십니까? <span class="required-star">★</span></div>
+        <div class="scale-wrap">
+          <span class="scale-label">전혀 심하지 않음</span>
+          <div class="scale-btns" id="b4Scale">
+            <button type="button" class="scale-btn" onclick="selectScale('b4',1)">1</button>
+            <button type="button" class="scale-btn" onclick="selectScale('b4',2)">2</button>
+            <button type="button" class="scale-btn" onclick="selectScale('b4',3)">3</button>
+            <button type="button" class="scale-btn" onclick="selectScale('b4',4)">4</button>
+            <button type="button" class="scale-btn" onclick="selectScale('b4',5)">5</button>
+          </div>
+          <span class="scale-label">매우 심함</span>
+        </div>
+        <input type="hidden" id="b4" value="">
+        <div class="error-msg" id="err-b4">평가 점수를 선택해 주세요.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- C -->
+  <div class="section-card">
+    <div class="section-header"><span class="section-badge">C</span><span class="section-title">영업 및 업무 영향도</span></div>
+    <div class="section-body">
+      <div class="q-block">
+        <div class="q-label"><span class="q-num">C-1</span>박스 젖음으로 인해 영업 활동에 실질적인 문제가 발생한 적이 있습니까? <span class="required-star">★</span></div>
+        <div class="options-list">
+          <label class="option-item"><input type="radio" name="c1" value="네, 영업에 심각한 지장이 있었습니다"> 네, 영업에 심각한 지장이 있었습니다</label>
+          <label class="option-item"><input type="radio" name="c1" value="약간 불편하였으나 큰 문제는 없었습니다"> 약간 불편하였으나 큰 문제는 없었습니다</label>
+          <label class="option-item"><input type="radio" name="c1" value="특별히 문제된 적 없습니다"> 특별히 문제된 적 없습니다</label>
+          <label class="option-item"><input type="radio" name="c1" value="해당 없음 (박스 젖음 경험 없음)"> 해당 없음 (박스 젖음 경험 없음)</label>
+        </div>
+        <div class="error-msg" id="err-c1">응답을 선택해 주세요.</div>
+      </div>
+      <div class="q-block">
+        <div class="q-label"><span class="q-num">C-2</span>박스 젖음으로 인해 실제로 발생한 문제는 무엇입니까? <span style="font-size:12px;color:#888;">(복수 선택 가능)</span></div>
+        <div class="options-list">
+          <label class="option-item checkbox-item"><input type="checkbox" name="c2" value="고객 불만 접수 / 클레임"> 고객 불만 접수 / 클레임</label>
+          <label class="option-item checkbox-item"><input type="checkbox" name="c2" value="제품 교환 또는 반품 요청"> 제품 교환 또는 반품 요청</label>
+          <label class="option-item checkbox-item"><input type="checkbox" name="c2" value="제품 불량 오인으로 인한 신뢰도 저하"> 제품 불량 오인으로 인한 신뢰도 저하</label>
+          <label class="option-item checkbox-item"><input type="checkbox" name="c2" value="박스 파손으로 인한 운반/보관 불편"> 박스 파손으로 인한 운반/보관 불편</label>
+          <label class="option-item checkbox-item"><input type="checkbox" name="c2" value="판매 기회 손실"> 판매 기회 손실 (구매 취소 등)</label>
+          <label class="option-item checkbox-item"><input type="checkbox" name="c2" value="해당 없음"> 해당 없음</label>
+          <label class="option-item checkbox-item"><input type="checkbox" name="c2" value="기타" data-etc-id="c2-etc"> 기타</label>
+        </div>
+        <div id="c2-etc" style="display:none; padding-left:38px; margin-top:8px; margin-bottom:4px;">
+          <input type="text" class="text-input" id="c2-etc-text" placeholder="기타 문제를 입력해 주세요" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- D -->
+  <div class="section-card">
+    <div class="section-header"><span class="section-badge">D</span><span class="section-title">경쟁사 제품 비교</span></div>
+    <div class="section-body">
+      <div class="q-block">
+        <div class="q-label"><span class="q-num">D-1</span>경쟁사 보일러 제품을 취급하거나 접해본 경험이 있습니까? <span style="font-size:12px;color:#888;">(복수 선택 가능)</span> <span class="required-star">★</span></div>
+        <div class="options-list">
+          <label class="option-item checkbox-item"><input type="checkbox" name="d1" value="경동나비엔"> 경동나비엔</label>
+          <label class="option-item checkbox-item"><input type="checkbox" name="d1" value="귀뚜라미"> 귀뚜라미</label>
+          <label class="option-item checkbox-item"><input type="checkbox" name="d1" value="린나이"> 린나이</label>
+          <label class="option-item checkbox-item"><input type="checkbox" name="d1" value="경쟁사 제품 접한 경험 없음"> 경쟁사 제품 접한 경험 없음</label>
+        </div>
+        <div class="error-msg" id="err-d1">하나 이상 선택해 주세요.</div>
+      </div>
+      <div class="q-block">
+        <div class="q-label"><span class="q-num">D-2</span>접해보신 경쟁사 제품의 박스 젖음 정도를 당사 제품과 비교해 평가해 주세요. <span class="required-star">★</span></div>
+        <div class="competitor-table">
+          <table class="comp-table">
+            <thead>
+              <tr>
+                <th>경쟁사</th>
+                <th>당사보다 훨씬 적음</th>
+                <th>당사보다 약간 적음</th>
+                <th>당사와 비슷</th>
+                <th>당사보다 약간 심함</th>
+                <th>당사보다 훨씬 심함</th>
+                <th>경험 없음</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>경동나비엔</td>
+                <td><input type="radio" name="d2_경동나비엔" value="당사보다 훨씬 적음"></td>
+                <td><input type="radio" name="d2_경동나비엔" value="당사보다 약간 적음"></td>
+                <td><input type="radio" name="d2_경동나비엔" value="당사와 비슷"></td>
+                <td><input type="radio" name="d2_경동나비엔" value="당사보다 약간 심함"></td>
+                <td><input type="radio" name="d2_경동나비엔" value="당사보다 훨씬 심함"></td>
+                <td><input type="radio" name="d2_경동나비엔" value="경험 없음"></td>
+              </tr>
+              <tr>
+                <td>귀뚜라미</td>
+                <td><input type="radio" name="d2_귀뚜라미" value="당사보다 훨씬 적음"></td>
+                <td><input type="radio" name="d2_귀뚜라미" value="당사보다 약간 적음"></td>
+                <td><input type="radio" name="d2_귀뚜라미" value="당사와 비슷"></td>
+                <td><input type="radio" name="d2_귀뚜라미" value="당사보다 약간 심함"></td>
+                <td><input type="radio" name="d2_귀뚜라미" value="당사보다 훨씬 심함"></td>
+                <td><input type="radio" name="d2_귀뚜라미" value="경험 없음"></td>
+              </tr>
+              <tr>
+                <td>린나이</td>
+                <td><input type="radio" name="d2_린나이" value="당사보다 훨씬 적음"></td>
+                <td><input type="radio" name="d2_린나이" value="당사보다 약간 적음"></td>
+                <td><input type="radio" name="d2_린나이" value="당사와 비슷"></td>
+                <td><input type="radio" name="d2_린나이" value="당사보다 약간 심함"></td>
+                <td><input type="radio" name="d2_린나이" value="당사보다 훨씬 심함"></td>
+                <td><input type="radio" name="d2_린나이" value="경험 없음"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="error-msg" id="err-d2">각 경쟁사에 대해 선택해 주세요.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- E -->
+  <div class="section-card">
+    <div class="section-header"><span class="section-badge">E</span><span class="section-title">CO 경보기 배터리 관련</span></div>
+    <div class="section-body">
+      <div class="q-block">
+        <div class="q-label"><span class="q-num">E-1</span>CO 경보기의 배터리가 빨리 소진된다는 민원을 접수하신 적이 있습니까? <span class="required-star">★</span></div>
+        <div class="options-list">
+          <label class="option-item"><input type="radio" name="e1" value="예, 민원을 받은 적 있습니다" id="e1_yes"> 예, 민원을 받은 적 있습니다</label>
+          <label class="option-item"><input type="radio" name="e1" value="아니요, 받은 적 없습니다" id="e1_no"> 아니요, 받은 적 없습니다</label>
+        </div>
+        <div class="error-msg" id="err-e1">응답을 선택해 주세요.</div>
+      </div>
+
+      <!-- E-2 ~ E-4: 조건부 블록 -->
+      <div class="q-block disabled" id="e2block">
+        <div class="q-label"><span class="q-num">E-2</span>민원이 발생한 시점은 언제입니까? <span style="font-size:12px;color:#888;">(해당 항목 모두 선택)</span> <span class="required-star">★</span></div>
+        <div style="padding-left:38px;">
+          <p style="font-size:12px;color:#888;margin-bottom:8px;font-weight:500;">▸ 과거 민원 (현재는 없음)</p>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;">
+            <label class="option-item checkbox-item"><input type="checkbox" name="e2" value="3년 이전에 발생, 현재는 없음"> 3년 이전에 발생, 현재는 없음</label>
+            <label class="option-item checkbox-item"><input type="checkbox" name="e2" value="2~3년 전에 발생, 현재는 없음"> 2~3년 전에 발생, 현재는 없음</label>
+            <label class="option-item checkbox-item"><input type="checkbox" name="e2" value="1~2년 전에 발생, 현재는 없음"> 1~2년 전에 발생, 현재는 없음</label>
+          </div>
+          <p style="font-size:12px;color:#888;margin-bottom:8px;font-weight:500;">▸ 최근 민원 (현재 진행 중)</p>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <label class="option-item checkbox-item"><input type="checkbox" name="e2" value="6개월~1년 전부터 현재까지 지속"> 6개월~1년 전부터 현재까지 지속</label>
+            <label class="option-item checkbox-item"><input type="checkbox" name="e2" value="6개월 이내 발생, 현재도 접수 중"> 6개월 이내 발생, 현재도 접수 중</label>
+            <label class="option-item checkbox-item"><input type="checkbox" name="e2" value="최근 1개월 이내 새로 발생"> 최근 1개월 이내 새로 발생</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="q-block disabled" id="e3block">
+        <div class="q-label"><span class="q-num">E-3</span>고객이 체감한 배터리 사용 기간은 대략 어느 정도였습니까?</div>
+        <div class="options-list">
+          <label class="option-item"><input type="radio" name="e3" value="1개월 미만"> 1개월 미만</label>
+          <label class="option-item"><input type="radio" name="e3" value="1개월 이상 ~ 3개월 미만"> 1개월 이상 ~ 3개월 미만</label>
+          <label class="option-item"><input type="radio" name="e3" value="3개월 이상 ~ 6개월 미만"> 3개월 이상 ~ 6개월 미만</label>
+          <label class="option-item"><input type="radio" name="e3" value="6개월 이상 ~ 1년 미만"> 6개월 이상 ~ 1년 미만</label>
+          <label class="option-item"><input type="radio" name="e3" value="1년 이상"> 1년 이상</label>
+          <label class="option-item"><input type="radio" name="e3" value="잘 모름 / 고객이 구체적 기간 미제공"> 잘 모름 / 고객이 구체적 기간 미제공</label>
+        </div>
+      </div>
+
+      <div class="q-block disabled" id="e4block">
+        <div class="q-label"><span class="q-num">E-4</span>배터리 소진 민원이 접수된 CO 경보기의 제조 업체는 어디입니까? <span style="font-size:12px;color:#888;">(복수 선택 가능)</span></div>
+        <div class="options-list">
+          <label class="option-item checkbox-item"><input type="checkbox" name="e4" value="수산홈텍"> 수산홈텍</label>
+          <label class="option-item checkbox-item"><input type="checkbox" name="e4" value="아지스"> 아지스</label>
+          <label class="option-item checkbox-item"><input type="checkbox" name="e4" value="진연"> 진연</label>
+          <label class="option-item checkbox-item"><input type="checkbox" name="e4" value="업체 불명 / 모름"> 업체 불명 / 모름</label>
+          <label class="option-item checkbox-item"><input type="checkbox" name="e4" value="기타" data-etc-id="e4-etc"> 기타</label>
+        </div>
+        <div id="e4-etc" style="display:none; padding-left:38px; margin-top:8px; margin-bottom:4px;">
+          <input type="text" class="text-input" id="e4-etc-text" placeholder="기타 제조업체를 입력해 주세요" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- F. 조절기 관련 -->
+  <div class="section-card">
+    <div class="section-header"><span class="section-badge">F</span><span class="section-title">DCR-81 / DCR-21B 조절기 관련</span></div>
+    <div class="section-body">
+
+      <!-- F-1 백라이트 인지 -->
+      <div class="q-block">
+        <div class="q-label"><span class="q-num">F-1</span>DCR-81 / DCR-21B 조절기에 백라이트 밝기 조절 기능이 추가(26년 3월 18일)된 것을 알고 계셨습니까? <span class="required-star">★</span></div>
+        <div style="padding-left:38px; margin-bottom:14px;">
+          <div style="background:#f0f4ff; border:1px solid #dde6f5; border-radius:8px; padding:12px 14px; font-size:13px; color:#2a3a6b; line-height:1.7;">
+            <strong style="display:block;margin-bottom:4px;">📋 기능 안내</strong>
+            EEP DATA <strong>"b1"</strong> 값 선택 시 밝기 설정 가능 &nbsp;|&nbsp; 설정 범위: <strong>01 ~ 05단계</strong>
+            <div style="display:flex;gap:6px;margin-top:10px;align-items:center;">
+              <span style="font-size:11px;color:#888;">어두움</span>
+              <div style="display:flex;gap:4px;">
+                <div style="width:28px;height:28px;background:#2a2a3a;border-radius:5px;display:flex;align-items:center;justify-content:center;color:#ccc;font-size:11px;font-weight:600;">01</div>
+                <div style="width:28px;height:28px;background:#3a3a5a;border-radius:5px;display:flex;align-items:center;justify-content:center;color:#ddd;font-size:11px;font-weight:600;">02</div>
+                <div style="width:28px;height:28px;background:#4a4a7a;border-radius:5px;display:flex;align-items:center;justify-content:center;color:#eee;font-size:11px;font-weight:600;">03</div>
+                <div style="width:28px;height:28px;background:#5a5aaa;border-radius:5px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:600;">04</div>
+                <div style="width:28px;height:28px;background:#6464cc;border-radius:5px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:600;">05</div>
+              </div>
+              <span style="font-size:11px;color:#888;">밝음</span>
+            </div>
+          </div>
+        </div>
+        <div class="options-list">
+          <label class="option-item"><input type="radio" name="f1" value="예, 알고 있었습니다"> 예, 알고 있었습니다</label>
+          <label class="option-item"><input type="radio" name="f1" value="아니요, 몰랐습니다"> 아니요, 몰랐습니다</label>
+        </div>
+        <div class="error-msg" id="err-f1">응답을 선택해 주세요.</div>
+      </div>
+
+      <!-- F-2 백라이트 불만 접수 여부 -->
+      <div class="q-block">
+        <div class="q-label"><span class="q-num">F-2</span>조절기 백라이트 시간과 관련한 고객 불만이나 민원을 접수하신 적이 있습니까? <span class="required-star">★</span></div>
+        <div class="options-list">
+          <label class="option-item"><input type="radio" name="f2" value="예, 접수한 적 있습니다"> 예, 접수한 적 있습니다</label>
+          <label class="option-item"><input type="radio" name="f2" value="아니요, 없습니다"> 아니요, 없습니다</label>
+        </div>
+        <div class="error-msg" id="err-f2">응답을 선택해 주세요.</div>
+      </div>
+
+      <!-- F-3 백라이트 희망 시간 -->
+      <div class="q-block">
+        <div class="q-label"><span class="q-num">F-3</span>조절기의 백라이트 유지 시간은 어느 정도가 적당하다고 생각하십니까? <span class="required-star">★</span></div>
+        <div class="options-list">
+          <label class="option-item"><input type="radio" name="f3" value="10초"> 10초</label>
+          <label class="option-item"><input type="radio" name="f3" value="20초"> 20초</label>
+          <label class="option-item"><input type="radio" name="f3" value="30초"> 30초</label>
+          <label class="option-item"><input type="radio" name="f3" value="40초"> 40초</label>
+          <label class="option-item"><input type="radio" name="f3" value="50초"> 50초</label>
+          <label class="option-item" id="f3-etc-item">
+            <input type="radio" name="f3" value="기타" id="f3-etc-radio" data-etc-id="f3-etc"> 기타
+          </label>
+        </div>
+        <div id="f3-etc" style="display:none; padding-left:38px; margin-top:8px;">
+          <input type="text" class="text-input" id="f3-etc-text" placeholder="희망하시는 시간이나 의견을 입력해 주세요" />
+        </div>
+        <div class="error-msg" id="err-f3">응답을 선택해 주세요.</div>
+      </div>
+
+      <!-- F-4 외출모드 오인 경험 -->
+      <div class="q-block">
+        <div class="q-label"><span class="q-num">F-4</span>외출모드 설정 시 온도 표시창 좌우가 모두 표시되어 고객이 난방모드로 오인한 경험이 있습니까? <span class="required-star">★</span></div>
+        <div style="padding-left:38px; margin-bottom:16px;">
+          <div style="background:#111827; border-radius:10px; padding:14px 16px;">
+            <p style="font-size:11px; color:#9ca3af; margin-bottom:10px; font-weight:500; letter-spacing:0.3px;">룸콘 표시창 비교</p>
+            <div style="display:flex; gap:8px; align-items:stretch; flex-wrap:wrap;">
+              <div style="flex:1;min-width:120px;">
+                <p style="font-size:11px;color:#9ca3af;text-align:center;margin-bottom:6px;">난방 모드</p>
+                <div style="background:#1a1a2a;border:1px solid #333;border-radius:8px;padding:10px 8px;display:flex;align-items:center;justify-content:space-around;">
+                  <div style="text-align:center;"><div style="font-size:9px;color:#f97316;">🔥</div><div style="font-size:17px;font-weight:700;color:#fff;font-family:monospace;">23°<span style="font-size:11px;">C</span></div><div style="font-size:8px;color:#6b7280;">현재</div></div>
+                  <div style="width:1px;height:28px;background:#333;"></div>
+                  <div style="text-align:center;"><div style="font-size:9px;color:#60a5fa;">⚙</div><div style="font-size:17px;font-weight:700;color:#fff;font-family:monospace;">25°<span style="font-size:11px;">C</span></div><div style="font-size:8px;color:#6b7280;">설정</div></div>
+                </div>
+                <div style="background:#1e3a1e;border:1px solid #2d5a2d;border-radius:5px;padding:3px;text-align:center;margin-top:4px;"><span style="font-size:10px;color:#4ade80;">난방</span></div>
+              </div>
+              <div style="display:flex;align-items:center;padding-top:12px;"><span style="font-size:16px;color:#ef4444;">→</span></div>
+              <div style="flex:1;min-width:120px;">
+                <p style="font-size:11px;color:#ef4444;text-align:center;margin-bottom:6px;">외출 (현재·문제)</p>
+                <div style="background:#1a1a2a;border:1.5px solid #ef4444;border-radius:8px;padding:10px 8px;display:flex;align-items:center;justify-content:space-around;">
+                  <div style="text-align:center;"><div style="font-size:9px;color:#9ca3af;">🏠</div><div style="font-size:17px;font-weight:700;color:#fff;font-family:monospace;">20°<span style="font-size:11px;">C</span></div><div style="font-size:8px;color:#6b7280;">현재</div></div>
+                  <div style="width:1px;height:28px;background:#333;"></div>
+                  <div style="text-align:center;"><div style="font-size:9px;color:#9ca3af;">&nbsp;</div><div style="font-size:17px;font-weight:700;color:#fff;font-family:monospace;">5°<span style="font-size:11px;">C</span></div><div style="font-size:8px;color:#6b7280;">설정</div></div>
+                </div>
+                <div style="background:#3a1e1e;border:1px solid #5a2d2d;border-radius:5px;padding:3px;text-align:center;margin-top:4px;"><span style="font-size:10px;color:#ef4444;">오인 ⚠</span></div>
+              </div>
+              <div style="display:flex;align-items:center;padding-top:12px;"><span style="font-size:16px;color:#22c55e;">→</span></div>
+              <div style="flex:1;min-width:120px;">
+                <p style="font-size:11px;color:#22c55e;text-align:center;margin-bottom:6px;">외출 (개선 요청)</p>
+                <div style="background:#1a1a2a;border:1.5px solid #22c55e;border-radius:8px;padding:10px 8px;display:flex;align-items:center;justify-content:center;">
+                  <div style="text-align:center;"><div style="font-size:9px;color:#9ca3af;">🏠</div><div style="font-size:17px;font-weight:700;color:#fff;font-family:monospace;">20°<span style="font-size:11px;">C</span></div><div style="font-size:8px;color:#6b7280;">현재만 표시</div></div>
+                </div>
+                <div style="background:#1e3a1e;border:1px solid #2d5a2d;border-radius:5px;padding:3px;text-align:center;margin-top:4px;"><span style="font-size:10px;color:#4ade80;">명확 ✓</span></div>
+              </div>
+            </div>
+            <p style="font-size:11px;color:#6b7280;margin-top:8px;">※ 요청 사항: 외출모드 시 현재 온도만 표시</p>
+          </div>
+        </div>
+        <div class="options-list">
+          <label class="option-item"><input type="radio" name="f4" value="예, 오인 경험이 있습니다"> 예, 오인 경험이 있습니다</label>
+          <label class="option-item"><input type="radio" name="f4" value="아니요, 경험한 적 없습니다"> 아니요, 경험한 적 없습니다</label>
+          <label class="option-item"><input type="radio" name="f4" value="해당 모델 미취급"> 해당 모델 미취급</label>
+        </div>
+        <div class="error-msg" id="err-f4">응답을 선택해 주세요.</div>
+      </div>
+
+      <!-- F-5 외출모드 개선 필요성 -->
+      <div class="q-block">
+        <div class="q-label"><span class="q-num">F-5</span>외출모드 화면을 현재 온도만 표시하도록 개선하는 것이 필요하다고 생각하십니까? <span class="required-star">★</span></div>
+        <div class="options-list">
+          <label class="option-item"><input type="radio" name="f5" value="매우 필요합니다"> 매우 필요합니다</label>
+          <label class="option-item"><input type="radio" name="f5" value="필요합니다"> 필요합니다</label>
+          <label class="option-item"><input type="radio" name="f5" value="보통입니다"> 보통입니다</label>
+          <label class="option-item"><input type="radio" name="f5" value="필요하지 않습니다"> 필요하지 않습니다</label>
+        </div>
+        <div class="error-msg" id="err-f5">응답을 선택해 주세요.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- G. 기타 의견 -->
+  <div class="section-card">
+    <div class="section-header"><span class="section-badge">G</span><span class="section-title">기타 의견</span></div>
+    <div class="section-body">
+      <div class="q-block">
+        <div class="q-label"><span class="q-num">G-1</span>박스 젖음 현상, CO 경보기, 조절기 관련하여 추가로 전달하실 의견이나 현장 경험을 자유롭게 기재해 주세요.</div>
+        <div class="text-input-wrap">
+          <textarea class="textarea-input" id="g1" placeholder="의견을 자유롭게 입력해 주세요..."></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="submit-area">
+    <button class="submit-btn" onclick="submitSurvey()">설문 제출하기</button>
+  </div>
+</div>
+
+<!-- 제출 완료 -->
+<div class="success-overlay" id="successOverlay">
+  <div class="success-box">
+    <div class="success-icon">✅</div>
+    <h2>설문이 제출되었습니다</h2>
+    <p>소중한 의견을 보내주셔서 감사합니다.<br>수집된 의견은 제품 품질 개선에 적극 반영하겠습니다.</p>
+    <button class="close-success" onclick="resetForm()">새로 작성하기</button>
+  </div>
+</div>
+
+<!-- 관리자 버튼 -->
+<button class="admin-toggle" onclick="openAdminLogin()">📊 관리자</button>
+
+<!-- 비밀번호 로그인 모달 -->
+<div class="modal-overlay" id="pwModal">
+  <div class="modal-box">
+    <h2>🔐 관리자 인증</h2>
+    <p>관리자 비밀번호를 입력해 주세요.</p>
+    <input type="password" class="modal-input" id="pwInput" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')checkPassword()" />
+    <div class="modal-pw-err" id="pwErr">비밀번호가 올바르지 않습니다.</div>
+    <div class="modal-btn-row">
+      <button class="modal-btn secondary" onclick="closeModal('pwModal')">취소</button>
+      <button class="modal-btn primary" onclick="checkPassword()">확인</button>
+    </div>
+  </div>
+</div>
+
+<!-- 비밀번호 변경 모달 -->
+<div class="modal-overlay" id="changePwModal">
+  <div class="modal-box">
+    <h2>🔑 비밀번호 변경</h2>
+    <p>새로운 관리자 비밀번호를 설정해 주세요.</p>
+    <input type="password" class="modal-input" id="newPw1" placeholder="새 비밀번호" style="margin-bottom:8px;" />
+    <input type="password" class="modal-input" id="newPw2" placeholder="새 비밀번호 확인" onkeydown="if(event.key==='Enter')saveNewPassword()" style="margin-top:4px;" />
+    <div class="modal-pw-err" id="changePwErr">비밀번호가 일치하지 않습니다.</div>
+    <div class="modal-btn-row">
+      <button class="modal-btn secondary" onclick="closeModal('changePwModal')">취소</button>
+      <button class="modal-btn primary" onclick="saveNewPassword()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 관리자 패널 (전체화면) -->
+<div class="admin-modal" id="adminModal">
+  <div class="admin-header">
+    <h2>📋 설문 응답 관리</h2>
+    <button class="admin-close" onclick="closeAdminModal()">✕ 닫기</button>
+  </div>
+  <div class="admin-body">
+    <div class="admin-stats-row" id="adminStatsRow"></div>
+    <div class="admin-toolbar">
+      <input type="text" id="searchInput" placeholder="🔍  대리점명, 직무, 의견 등 검색..." oninput="renderTable()" />
+      <button class="dl-btn" onclick="downloadExcel()">⬇ 엑셀 다운로드</button>
+      <button class="set-pw-btn" onclick="openChangePw()">🔑 비밀번호 변경</button>
+      <button class="clr-btn" onclick="clearData()">🗑 데이터 초기화</button>
+    </div>
+    <div class="resp-table-wrap" id="tableWrap"></div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'boiler_survey_responses';
+const PW_KEY = 'boiler_survey_admin_pw';
+const DEFAULT_PW = 'admin1234';
+
+function getPassword() { return localStorage.getItem(PW_KEY) || DEFAULT_PW; }
+
+/* ── E-1 조건부 활성화 ── */
+document.querySelectorAll('input[name="e1"]').forEach(el => {
+  el.addEventListener('change', function() {
+    const yes = this.value === '예, 민원을 받은 적 있습니다';
+    ['e2block','e3block','e4block'].forEach(id => {
+      const blk = document.getElementById(id);
+      if (yes) {
+        blk.classList.remove('disabled');
+      } else {
+        blk.classList.add('disabled');
+        blk.querySelectorAll('input[type=radio], input[type=checkbox]').forEach(i => i.checked = false);
+        blk.querySelectorAll('.option-item').forEach(i => i.classList.remove('selected'));
+      }
+    });
+  });
+});
+
+/* ── 기타 입력 토글 (전체 공통) ── */
+function setupEtcToggle(inputEl) {
+  const etcId = inputEl.dataset.etcId;
+  if (!etcId) return;
+  const wrap = document.getElementById(etcId);
+  if (!wrap) return;
+  const textInput = wrap.querySelector('input[type=text]');
+  const isCheckbox = inputEl.type === 'checkbox';
+
+  inputEl.addEventListener('change', function() {
+    if (isCheckbox) {
+      if (this.checked) {
+        wrap.style.display = 'block';
+        if (textInput) textInput.focus();
+      } else {
+        wrap.style.display = 'none';
+        if (textInput) textInput.value = '';
+      }
+    } else {
+      // radio: hide all etc wraps in same name group first
+      document.querySelectorAll(`input[name="${this.name}"][data-etc-id]`).forEach(r => {
+        const w = document.getElementById(r.dataset.etcId);
+        if (w && r !== this) { w.style.display = 'none'; const t = w.querySelector('input[type=text]'); if(t) t.value=''; }
+      });
+      wrap.style.display = 'block';
+      if (textInput) textInput.focus();
+    }
+  });
+}
+document.querySelectorAll('input[data-etc-id]').forEach(setupEtcToggle);
+
+/* ── 관리자 로그인 ── */
+function openAdminLogin() {
+  document.getElementById('pwInput').value = '';
+  document.getElementById('pwErr').style.display = 'none';
+  document.getElementById('pwModal').classList.add('active');
+  setTimeout(() => document.getElementById('pwInput').focus(), 100);
+}
+
+function checkPassword() {
+  const val = document.getElementById('pwInput').value;
+  if (val === getPassword()) {
+    closeModal('pwModal');
+    openAdminModal();
+  } else {
+    document.getElementById('pwErr').style.display = 'block';
+    document.getElementById('pwInput').value = '';
+    document.getElementById('pwInput').focus();
+  }
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+function openAdminModal() {
+  document.getElementById('adminModal').classList.add('active');
+  renderAdminStats();
+  renderTable();
+}
+
+function closeAdminModal() { document.getElementById('adminModal').classList.remove('active'); }
+
+/* ── 비밀번호 변경 ── */
+function openChangePw() {
+  document.getElementById('newPw1').value = '';
+  document.getElementById('newPw2').value = '';
+  document.getElementById('changePwErr').style.display = 'none';
+  document.getElementById('changePwModal').classList.add('active');
+  setTimeout(() => document.getElementById('newPw1').focus(), 100);
+}
+
+function saveNewPassword() {
+  const p1 = document.getElementById('newPw1').value.trim();
+  const p2 = document.getElementById('newPw2').value.trim();
+  const errEl = document.getElementById('changePwErr');
+  if (!p1) { errEl.textContent = '비밀번호를 입력해 주세요.'; errEl.style.display = 'block'; return; }
+  if (p1 !== p2) { errEl.textContent = '비밀번호가 일치하지 않습니다.'; errEl.style.display = 'block'; return; }
+  localStorage.setItem(PW_KEY, p1);
+  closeModal('changePwModal');
+  alert('비밀번호가 변경되었습니다.');
+}
+
+/* ── 통계 ── */
+function renderAdminStats() {
+  const all = getFromStorage();
+  const yesE1 = all.filter(r => r['E-1_CO민원경험'] && r['E-1_CO민원경험'].startsWith('예')).length;
+  const yesB1 = all.filter(r => r['B-1_박스젖음경험'] && r['B-1_박스젖음경험'].startsWith('예')).length;
+  const lastDate = all.length > 0 ? all[all.length-1].제출일시 : '-';
+  document.getElementById('adminStatsRow').innerHTML = `
+    <div class="stat-card"><div class="stat-label">총 응답 수</div><div class="stat-val">${all.length}건</div></div>
+    <div class="stat-card"><div class="stat-label">박스 젖음 경험</div><div class="stat-val">${yesB1}건</div></div>
+    <div class="stat-card"><div class="stat-label">CO 민원 경험</div><div class="stat-val">${yesE1}건</div></div>
+    <div class="stat-card"><div class="stat-label">최근 응답</div><div class="stat-val" style="font-size:13px;padding-top:4px;">${lastDate}</div></div>`;
+}
+
+/* ── 테이블 렌더링 ── */
+const COL_LABELS = [
+  ['제출일시','제출일시'],['A-1_대리점명','대리점명'],['A-2_직무','직무'],
+  ['B-1_박스젖음경험','B-1 박스젖음'],['B-2_젖음비율','B-2 비율'],['B-3_발견시점','B-3 발견시점'],
+  ['B-4_심각도(1-5)','B-4 심각도'],['C-1_영업영향','C-1 영업영향'],['C-2_발생문제','C-2 발생문제'],
+  ['D-1_경쟁사경험','D-1 경쟁사'],['D-2_경동나비엔비교','D-2 경동'],['D-2_귀뚜라미비교','D-2 귀뚜라미'],
+  ['D-2_린나이비교','D-2 린나이'],['E-1_CO민원경험','E-1 CO민원'],['E-2_민원발생시점','E-2 시점'],
+  ['E-3_배터리사용기간','E-3 배터리'],['E-4_CO경보기제조사','E-4 제조사'],
+  ['F-1_백라이트기능인지','F-1 백라이트인지'],['F-2_백라이트불만접수','F-2 백라이트불만'],
+  ['F-3_희망백라이트시간','F-3 희망시간'],['F-4_외출모드오인경험','F-4 외출오인'],['F-5_외출모드개선필요성','F-5 개선필요성'],
+  ['G-1_기타의견','G-1 기타의견']
+];
+
+function renderTable() {
+  const all = getFromStorage();
+  const q = (document.getElementById('searchInput').value || '').toLowerCase();
+  const filtered = q ? all.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(q))) : all;
+
+  if (filtered.length === 0) {
+    document.getElementById('tableWrap').innerHTML = '<div class="empty-msg">저장된 응답이 없습니다.</div>';
+    return;
+  }
+
+  let html = '<table class="resp-table"><thead><tr><th>#</th>';
+  COL_LABELS.forEach(([,label]) => { html += `<th>${label}</th>`; });
+  html += '<th>삭제</th></tr></thead><tbody>';
+
+  filtered.forEach((row, idx) => {
+    const realIdx = all.indexOf(row);
+    html += `<tr>`;
+    html += `<td>${realIdx + 1}</td>`;
+    COL_LABELS.forEach(([key]) => {
+      const v = row[key] || '-';
+      html += `<td class="${key==='F-1_기타의견'?'long':''}" title="${v}">${v}</td>`;
+    });
+    html += `<td><button class="del-row-btn" onclick="deleteRow(${realIdx})">삭제</button></td>`;
+    html += `</tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('tableWrap').innerHTML = html;
+}
+
+function deleteRow(idx) {
+  if (!confirm('이 응답을 삭제하시겠습니까?')) return;
+  let all = getFromStorage();
+  all.splice(idx, 1);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+  renderAdminStats();
+  renderTable();
+}
+
+/* ── scale ── */
+function selectScale(name, val) {
+  document.getElementById(name + 'Scale').querySelectorAll('.scale-btn').forEach((b, i) => {
+    b.classList.toggle('selected', i + 1 === val);
+  });
+  document.getElementById(name).value = val;
+}
+
+function getRadioValue(name) {
+  const el = document.querySelector(`input[name="${name}"]:checked`);
+  return el ? el.value : '';
+}
+
+function getCheckboxValues(name) {
+  return Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(e => e.value).join(', ');
+}
+
+function showError(id, show) {
+  const el = document.getElementById('err-' + id);
+  if (el) el.style.display = show ? 'block' : 'none';
+}
+
+function validateForm() {
+  let valid = true;
+  const agencyName = document.getElementById('agencyName').value.trim();
+  showError('agencyName', !agencyName); if (!agencyName) valid = false;
+  const job = getRadioValue('job');
+  showError('job', !job); if (!job) valid = false;
+  const b1 = getRadioValue('b1');
+  showError('b1', !b1); if (!b1) valid = false;
+  const b4 = document.getElementById('b4').value;
+  showError('b4', !b4); if (!b4) valid = false;
+  const c1 = getRadioValue('c1');
+  showError('c1', !c1); if (!c1) valid = false;
+  const d1 = getCheckboxValues('d1');
+  showError('d1', !d1); if (!d1) valid = false;
+  const e1 = getRadioValue('e1');
+  showError('e1', !e1); if (!e1) valid = false;
+  const f1v = getRadioValue('f1');
+  showError('f1', !f1v); if (!f1v) valid = false;
+  const f2v = getRadioValue('f2');
+  showError('f2', !f2v); if (!f2v) valid = false;
+  const f3v = getRadioValue('f3');
+  showError('f3', !f3v); if (!f3v) valid = false;
+  const f4v = getRadioValue('f4');
+  showError('f4', !f4v); if (!f4v) valid = false;
+  const f5v = getRadioValue('f5');
+  showError('f5', !f5v); if (!f5v) valid = false;
+  return valid;
+}
+
+function collectData() {
+  return {
+    제출일시: new Date().toLocaleString('ko-KR'),
+    'A-1_대리점명': document.getElementById('agencyName').value.trim(),
+    'A-2_직무': (function(){ const v=getRadioValue('job'); if(v==='기타'){const t=document.getElementById('job-etc-text')?.value.trim(); return t?'기타: '+t:'기타';} return v; })(),
+    'B-1_박스젖음경험': getRadioValue('b1'),
+    'B-2_젖음비율': getRadioValue('b2'),
+    'B-3_발견시점': (function(){ let vals=Array.from(document.querySelectorAll('input[name="b3"]:checked')).map(e=>{ if(e.value==='기타'){const t=document.getElementById('b3-etc-text')?.value.trim(); return t?'기타: '+t:'기타';} return e.value; }); return vals.join(', '); })(),
+    'B-4_심각도(1-5)': document.getElementById('b4').value,
+    'C-1_영업영향': getRadioValue('c1'),
+    'C-2_발생문제': (function(){ let vals=Array.from(document.querySelectorAll('input[name="c2"]:checked')).map(e=>{ if(e.value==='기타'){const t=document.getElementById('c2-etc-text')?.value.trim(); return t?'기타: '+t:'기타';} return e.value; }); return vals.join(', '); })(),
+    'D-1_경쟁사경험': getCheckboxValues('d1'),
+    'D-2_경동나비엔비교': getRadioValue('d2_경동나비엔'),
+    'D-2_귀뚜라미비교': getRadioValue('d2_귀뚜라미'),
+    'D-2_린나이비교': getRadioValue('d2_린나이'),
+    'E-1_CO민원경험': getRadioValue('e1'),
+    'E-2_민원발생시점': getCheckboxValues('e2'),
+    'E-3_배터리사용기간': getRadioValue('e3'),
+    'E-4_CO경보기제조사': (function(){ let vals=Array.from(document.querySelectorAll('input[name="e4"]:checked')).map(e=>{ if(e.value==='기타'){const t=document.getElementById('e4-etc-text')?.value.trim(); return t?'기타: '+t:'기타';} return e.value; }); return vals.join(', '); })(),
+    'F-1_백라이트기능인지': getRadioValue('f1'),
+    'F-2_백라이트불만접수': getRadioValue('f2'),
+    'F-3_희망백라이트시간': (function(){ const v=getRadioValue('f3'); if(v==='기타'){const t=document.getElementById('f3-etc-text')?.value.trim(); return t?'기타: '+t:'기타';} return v; })(),
+    'F-4_외출모드오인경험': getRadioValue('f4'),
+    'F-5_외출모드개선필요성': getRadioValue('f5'),
+    'G-1_기타의견': document.getElementById('g1').value.trim()
+  };
+}
+
+function saveToStorage(data) {
+  let all = getFromStorage();
+  all.push(data);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+}
+
+function getFromStorage() {
+  try { const s = localStorage.getItem(STORAGE_KEY); return s ? JSON.parse(s) : []; } catch(e) { return []; }
+}
+
+function submitSurvey() {
+  if (!validateForm()) {
+    const firstErr = document.querySelector('.error-msg[style*="block"]');
+    if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  saveToStorage(collectData());
+  document.getElementById('successOverlay').style.display = 'flex';
+}
+
+function resetForm() {
+  document.getElementById('successOverlay').style.display = 'none';
+  document.querySelectorAll('input[type=radio], input[type=checkbox]').forEach(el => el.checked = false);
+  document.querySelectorAll('input[type=text], textarea').forEach(el => el.value = '');
+  document.getElementById('b4').value = '';
+  document.querySelectorAll('.scale-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.option-item').forEach(b => b.classList.remove('selected'));
+  ['e2block','e3block','e4block'].forEach(id => document.getElementById(id).classList.add('disabled'));
+  ['job-etc','b3-etc','c2-etc','e4-etc','f3-etc'].forEach(id => {
+    const w = document.getElementById(id);
+    if (w) { w.style.display = 'none'; const t = w.querySelector('input[type=text]'); if(t) t.value=''; }
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function downloadExcel() {
+  const all = getFromStorage();
+  if (all.length === 0) { alert('저장된 응답 데이터가 없습니다.'); return; }
+  const ws = XLSX.utils.json_to_sheet(all);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '설문응답');
+  ws['!cols'] = Object.keys(all[0]).map(k => ({ wch: Math.max(k.length * 2, 20) }));
+  XLSX.writeFile(wb, '보일러품질설문_' + new Date().toISOString().slice(0,10) + '.xlsx');
+}
+
+function clearData() {
+  if (!confirm('모든 응답 데이터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  renderAdminStats();
+  renderTable();
+}
+
+/* ── 선택 UI 업데이트 ── */
+document.querySelectorAll('input[type=radio]').forEach(el => {
+  el.addEventListener('change', function() {
+    document.querySelectorAll(`input[name="${this.name}"]`).forEach(r => {
+      r.closest('.option-item')?.classList.toggle('selected', r.checked);
+    });
+  });
+});
+document.querySelectorAll('input[type=checkbox]').forEach(el => {
+  el.addEventListener('change', function() {
+    this.closest('.option-item')?.classList.toggle('selected', this.checked);
+  });
+});
+
+/* ── 진행률 ── */
+function updateProgress() {
+  let filled = 0;
+  if (document.getElementById('agencyName').value.trim()) filled++;
+  if (getRadioValue('job')) filled++;
+  if (getRadioValue('b1')) filled++;
+  if (document.getElementById('b4').value) filled++;
+  if (getRadioValue('c1')) filled++;
+  if (getCheckboxValues('d1')) filled++;
+  if (getRadioValue('e1')) filled++;
+  document.getElementById('progressBar').style.width = Math.round((filled/7)*100) + '%';
+}
+document.addEventListener('change', updateProgress);
+document.getElementById('agencyName').addEventListener('input', updateProgress);
+</script>
+</body>
+</html>
