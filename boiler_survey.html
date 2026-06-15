@@ -173,6 +173,30 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD G
 .del-row-btn { background: #fff0f0; color: #c0392b; border: 1px solid #fcc; padding: 3px 9px; border-radius: 5px; font-size: 11px; cursor: pointer; font-family: inherit; }
 .empty-msg { text-align: center; padding: 48px 20px; color: #aaa; font-size: 14px; }
 
+/* ── 관리자 탭 ── */
+.admin-tabs { display: flex; gap: 0; border-bottom: 2px solid #e0e6f5; margin-bottom: 20px; }
+.admin-tab { padding: 10px 22px; font-size: 13px; font-weight: 600; color: #888; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.15s; background: none; border-top: none; border-left: none; border-right: none; font-family: inherit; }
+.admin-tab:hover { color: #1a3a6b; }
+.admin-tab.active { color: #1a3a6b; border-bottom: 2px solid #1a3a6b; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── 항목별 분석 ── */
+.q-analysis-card { background: white; border: 1px solid #e0e6f5; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+.q-analysis-header { background: #f0f4ff; padding: 12px 16px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #e0e6f5; }
+.q-analysis-badge { background: #1a3a6b; color: white; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 8px; }
+.q-analysis-title { font-size: 13px; font-weight: 600; color: #1a3a6b; }
+.q-analysis-body { padding: 14px 16px; }
+.q-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.q-bar-label { font-size: 12.5px; color: #333; min-width: 180px; max-width: 220px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.q-bar-wrap { flex: 1; background: #f0f2f7; border-radius: 20px; height: 18px; overflow: hidden; }
+.q-bar-fill { height: 18px; border-radius: 20px; background: #1a3a6b; transition: width 0.5s ease; min-width: 2px; }
+.q-bar-fill.accent { background: #2563eb; }
+.q-bar-fill.green { background: #1a7a4e; }
+.q-bar-fill.red { background: #c0392b; }
+.q-bar-stats { font-size: 12px; color: #555; min-width: 70px; text-align: right; white-space: nowrap; }
+.q-total { font-size: 11px; color: #aaa; margin-top: 4px; }
+
 /* ── 제출 완료 ── */
 .success-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 400; align-items: center; justify-content: center; }
 .success-overlay.show { animation: fadeInOut 2.5s ease forwards; }
@@ -491,7 +515,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD G
       <div class="q-block">
         <div class="q-label"><span class="q-num">F-3</span>조절기의 백라이트 유지 시간은 어느 정도가 적당하다고 생각하십니까? <span class="required-star">★</span></div>
         <div class="options-list">
-          <label class="option-item"><input type="radio" name="f3" value="10초(기본)"> 10초(기본)</label>
+          <label class="option-item"><input type="radio" name="f3" value="10초"> 10초</label>
           <label class="option-item"><input type="radio" name="f3" value="20초"> 20초</label>
           <label class="option-item"><input type="radio" name="f3" value="30초"> 30초</label>
           <label class="option-item"><input type="radio" name="f3" value="40초"> 40초</label>
@@ -634,13 +658,28 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD G
   </div>
   <div class="admin-body">
     <div class="admin-stats-row" id="adminStatsRow"></div>
-    <div class="admin-toolbar">
-      <input type="text" id="searchInput" placeholder="🔍  대리점명, 직무, 의견 등 검색..." oninput="renderTable()" />
-      <button class="dl-btn" onclick="downloadExcel()">⬇ 엑셀 다운로드</button>
-      <button class="set-pw-btn" onclick="openChangePw()">🔑 비밀번호 변경</button>
-      <button class="clr-btn" onclick="clearData()">🗑 데이터 초기화</button>
+
+    <!-- 탭 -->
+    <div class="admin-tabs">
+      <button class="admin-tab active" onclick="switchTab('tabList')">📄 응답 목록</button>
+      <button class="admin-tab" onclick="switchTab('tabAnalysis')">📊 질문항목별 확인</button>
     </div>
-    <div class="resp-table-wrap" id="tableWrap"></div>
+
+    <!-- 탭1: 응답 목록 -->
+    <div class="tab-panel active" id="tabList">
+      <div class="admin-toolbar">
+        <input type="text" id="searchInput" placeholder="🔍  대리점명, 직무, 의견 등 검색..." oninput="renderTable()" />
+        <button class="dl-btn" onclick="downloadExcel()">⬇ 엑셀 다운로드</button>
+        <button class="set-pw-btn" onclick="openChangePw()">🔑 비밀번호 변경</button>
+        <button class="clr-btn" onclick="clearData()">🗑 데이터 초기화</button>
+      </div>
+      <div class="resp-table-wrap" id="tableWrap"></div>
+    </div>
+
+    <!-- 탭2: 질문항목별 분석 -->
+    <div class="tab-panel" id="tabAnalysis">
+      <div id="analysisWrap"></div>
+    </div>
   </div>
 </div>
 
@@ -828,6 +867,113 @@ async function openAdminModal() {
   document.getElementById('tableWrap').innerHTML = '<div class="empty-msg">데이터를 불러오는 중...</div>';
   await renderAdminStats();
   await renderTable();
+}
+
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  const idx = tabId === 'tabList' ? 0 : 1;
+  document.querySelectorAll('.admin-tab')[idx].classList.add('active');
+  if (tabId === 'tabAnalysis') renderAnalysis();
+}
+
+async function renderAnalysis() {
+  const wrap = document.getElementById('analysisWrap');
+  wrap.innerHTML = '<div class="empty-msg">분석 데이터를 불러오는 중...</div>';
+  const all = await getFromStorage();
+  const total = all.length;
+  if (total === 0) { wrap.innerHTML = '<div class="empty-msg">저장된 응답이 없습니다.</div>'; return; }
+
+  // 분석 정의: [섹션배지, 섹션명, 질문번호, 질문제목, 데이터키, 타입(radio/checkbox)]
+  const questions = [
+    ['A','기본 정보','A-2','직무','A-2_직무','radio'],
+    ['B','박스 젖음','B-1','박스 젖음 경험 여부','B-1_박스젖음경험','radio'],
+    ['B','박스 젖음','B-2','박스 젖음 비율 (최근 6개월)','B-2_젖음비율','radio'],
+    ['B','박스 젖음','B-3','박스 젖음 발견 시점','B-3_발견시점','checkbox'],
+    ['B','박스 젖음','B-4','박스 젖음 심각도 (1~5점)','B-4_심각도(1-5)','radio'],
+    ['C','영업 영향','C-1','영업 활동 영향','C-1_영업영향','radio'],
+    ['C','영업 영향','C-2','실제 발생 문제','C-2_발생문제','checkbox'],
+    ['D','경쟁사 비교','D-1','경쟁사 취급 경험','D-1_경쟁사경험','checkbox'],
+    ['D','경쟁사 비교','D-2 경동','경동나비엔 박스 젖음 비교','D-2_경동나비엔비교','radio'],
+    ['D','경쟁사 비교','D-2 귀뚜라미','귀뚜라미 박스 젖음 비교','D-2_귀뚜라미비교','radio'],
+    ['D','경쟁사 비교','D-2 린나이','린나이 박스 젖음 비교','D-2_린나이비교','radio'],
+    ['E','CO 경보기','E-1','CO 배터리 민원 접수 여부','E-1_CO민원경험','radio'],
+    ['E','CO 경보기','E-2','민원 발생 시점','E-2_민원발생시점','checkbox'],
+    ['E','CO 경보기','E-3','고객 체감 배터리 사용 기간','E-3_배터리사용기간','radio'],
+    ['E','CO 경보기','E-4','CO 경보기 제조업체','E-4_CO경보기제조사','checkbox'],
+    ['F','조절기','F-1','백라이트 기능 추가 인지 여부','F-1_백라이트기능인지','radio'],
+    ['F','조절기','F-2','백라이트 시간 불만 접수 여부','F-2_백라이트불만접수','radio'],
+    ['F','조절기','F-3','희망 백라이트 유지 시간','F-3_희망백라이트시간','radio'],
+    ['F','조절기','F-4','외출모드 난방 오인 경험','F-4_외출모드오인경험','radio'],
+    ['F','조절기','F-5','외출모드 개선 필요성','F-5_외출모드개선필요성','radio'],
+  ];
+
+  const barColors = ['','accent','green','red','','accent','green'];
+
+  function countValues(key, type) {
+    const counts = {};
+    all.forEach(row => {
+      const val = row[key] || '';
+      if (!val) return;
+      if (type === 'checkbox') {
+        val.split(', ').forEach(v => {
+          const vt = v.trim(); if (!vt) return;
+          counts[vt] = (counts[vt] || 0) + 1;
+        });
+      } else {
+        counts[val] = (counts[val] || 0) + 1;
+      }
+    });
+    return counts;
+  }
+
+  function buildCard(badge, qnum, title, key, type) {
+    const counts = countValues(key, type);
+    const entries = Object.entries(counts).sort((a,b) => b[1]-a[1]);
+    const answered = type === 'checkbox'
+      ? all.filter(r => r[key] && r[key].trim()).length
+      : Object.values(counts).reduce((s,v)=>s+v,0);
+
+    if (entries.length === 0) return '';
+
+    let rows = '';
+    entries.forEach(([label, cnt], i) => {
+      const pct = answered > 0 ? Math.round(cnt / answered * 100) : 0;
+      const colorClass = i === 0 ? '' : i === 1 ? 'accent' : i === 2 ? 'green' : '';
+      const shortLabel = label.length > 30 ? label.slice(0,29)+'…' : label;
+      rows += `
+        <div class="q-bar-row">
+          <div class="q-bar-label" title="${label}">${shortLabel}</div>
+          <div class="q-bar-wrap"><div class="q-bar-fill ${colorClass}" style="width:${pct}%"></div></div>
+          <div class="q-bar-stats">${cnt}건 (${pct}%)</div>
+        </div>`;
+    });
+
+    return `
+      <div class="q-analysis-card">
+        <div class="q-analysis-header">
+          <span class="q-analysis-badge">${badge}</span>
+          <span class="q-analysis-title">${qnum}. ${title}</span>
+        </div>
+        <div class="q-analysis-body">
+          ${rows}
+          <div class="q-total">응답 ${answered}건 / 전체 ${total}건</div>
+        </div>
+      </div>`;
+  }
+
+  let html = '';
+  let lastSection = '';
+  questions.forEach(([badge, section, qnum, title, key, type]) => {
+    if (section !== lastSection) {
+      html += `<div style="font-size:12px;font-weight:600;color:#1a3a6b;margin:20px 0 8px;padding-left:4px;letter-spacing:0.3px;">─── ${section}</div>`;
+      lastSection = section;
+    }
+    html += buildCard(badge, qnum, title, key, type);
+  });
+
+  wrap.innerHTML = html;
 }
 
 function closeAdminModal() { document.getElementById('adminModal').classList.remove('active'); }
