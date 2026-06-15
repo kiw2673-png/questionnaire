@@ -5,6 +5,75 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>품질 현황 파악을 위한 현장 설문 조사</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAwumgbiqvwsDehBkQn9ZXgt1s7nGXAejc",
+    authDomain: "questionnaire-8bc3c.firebaseapp.com",
+    projectId: "questionnaire-8bc3c",
+    storageBucket: "questionnaire-8bc3c.firebasestorage.app",
+    messagingSenderId: "538175124687",
+    appId: "1:538175124687:web:689a501becbf94e36173ba",
+    measurementId: "G-0X7TC5JWTC"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // Firestore 저장
+  window.firestoreSave = async function(data) {
+    try {
+      await addDoc(collection(db, "survey_responses"), {
+        ...data,
+        _timestamp: serverTimestamp()
+      });
+      return true;
+    } catch(e) {
+      console.error("Firestore 저장 오류:", e);
+      return false;
+    }
+  };
+
+  // Firestore 전체 조회
+  window.firestoreGetAll = async function() {
+    try {
+      const q = query(collection(db, "survey_responses"), orderBy("_timestamp", "asc"));
+      const snap = await getDocs(q);
+      return snap.docs.map(d => ({ _docId: d.id, ...d.data() }));
+    } catch(e) {
+      console.error("Firestore 조회 오류:", e);
+      return [];
+    }
+  };
+
+  // Firestore 단건 삭제
+  window.firestoreDelete = async function(docId) {
+    try {
+      await deleteDoc(doc(db, "survey_responses", docId));
+      return true;
+    } catch(e) {
+      console.error("Firestore 삭제 오류:", e);
+      return false;
+    }
+  };
+
+  // Firestore 전체 삭제
+  window.firestoreClearAll = async function() {
+    try {
+      const snap = await getDocs(collection(db, "survey_responses"));
+      const dels = snap.docs.map(d => deleteDoc(doc(db, "survey_responses", d.id)));
+      await Promise.all(dels);
+      return true;
+    } catch(e) {
+      console.error("Firestore 전체 삭제 오류:", e);
+      return false;
+    }
+  };
+
+  console.log("Firebase 초기화 완료");
+</script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo', sans-serif; background: #f5f6fa; color: #1a1a2e; min-height: 100vh; }
@@ -642,10 +711,11 @@ function checkPassword() {
 
 function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
-function openAdminModal() {
+async function openAdminModal() {
   document.getElementById('adminModal').classList.add('active');
-  renderAdminStats();
-  renderTable();
+  document.getElementById('tableWrap').innerHTML = '<div class="empty-msg">데이터를 불러오는 중...</div>';
+  await renderAdminStats();
+  await renderTable();
 }
 
 function closeAdminModal() { document.getElementById('adminModal').classList.remove('active'); }
@@ -671,8 +741,8 @@ function saveNewPassword() {
 }
 
 /* ── 통계 ── */
-function renderAdminStats() {
-  const all = getFromStorage();
+async function renderAdminStats() {
+  const all = await getFromStorage();
   const yesE1 = all.filter(r => r['E-1_CO민원경험'] && r['E-1_CO민원경험'].startsWith('예')).length;
   const yesB1 = all.filter(r => r['B-1_박스젖음경험'] && r['B-1_박스젖음경험'].startsWith('예')).length;
   const lastDate = all.length > 0 ? all[all.length-1].제출일시 : '-';
@@ -696,8 +766,8 @@ const COL_LABELS = [
   ['G-1_기타의견','G-1 기타의견']
 ];
 
-function renderTable() {
-  const all = getFromStorage();
+async function renderTable() {
+  const all = await getFromStorage();
   const q = (document.getElementById('searchInput').value || '').toLowerCase();
   const filtered = q ? all.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(q))) : all;
 
@@ -710,28 +780,33 @@ function renderTable() {
   COL_LABELS.forEach(([,label]) => { html += `<th>${label}</th>`; });
   html += '<th>삭제</th></tr></thead><tbody>';
 
-  filtered.forEach((row, idx) => {
-    const realIdx = all.indexOf(row);
+  filtered.forEach((row, num) => {
+    const docId = row._docId || '';
     html += `<tr>`;
-    html += `<td>${realIdx + 1}</td>`;
+    html += `<td>${num + 1}</td>`;
     COL_LABELS.forEach(([key]) => {
       const v = row[key] || '-';
-      html += `<td class="${key==='F-1_기타의견'?'long':''}" title="${v}">${v}</td>`;
+      const cls = key === 'G-1_기타의견' ? 'long' : '';
+      html += `<td class="${cls}" title="${String(v).replace(/"/g,"'")}">${v}</td>`;
     });
-    html += `<td><button class="del-row-btn" onclick="deleteRow(${realIdx})">삭제</button></td>`;
+    html += `<td><button class="del-row-btn" onclick="deleteRow('${docId}')">삭제</button></td>`;
     html += `</tr>`;
   });
   html += '</tbody></table>';
   document.getElementById('tableWrap').innerHTML = html;
 }
 
-function deleteRow(idx) {
+async function deleteRow(docId) {
   if (!confirm('이 응답을 삭제하시겠습니까?')) return;
-  let all = getFromStorage();
-  all.splice(idx, 1);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
-  renderAdminStats();
-  renderTable();
+  if (window.firestoreDelete && docId) {
+    await window.firestoreDelete(docId);
+  } else {
+    let all = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    all = all.filter((_,i) => i !== parseInt(docId));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+  }
+  await renderAdminStats();
+  await renderTable();
 }
 
 /* ── scale ── */
@@ -813,24 +888,43 @@ function collectData() {
   };
 }
 
-function saveToStorage(data) {
+// Firestore 기반 저장 (비동기)
+async function saveToStorage(data) {
+  if (window.firestoreSave) {
+    const ok = await window.firestoreSave(data);
+    return ok;
+  }
+  // fallback: localStorage
   let all = getFromStorage();
   all.push(data);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+  return true;
 }
 
-function getFromStorage() {
+async function getFromStorage() {
+  if (window.firestoreGetAll) {
+    return await window.firestoreGetAll();
+  }
   try { const s = localStorage.getItem(STORAGE_KEY); return s ? JSON.parse(s) : []; } catch(e) { return []; }
 }
 
-function submitSurvey() {
+async function submitSurvey() {
   if (!validateForm()) {
     const firstErr = document.querySelector('.error-msg[style*="block"]');
     if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
     return;
   }
-  saveToStorage(collectData());
-  document.getElementById('successOverlay').style.display = 'flex';
+  const btn = document.querySelector('.submit-btn');
+  btn.disabled = true;
+  btn.textContent = '제출 중...';
+  const ok = await saveToStorage(collectData());
+  btn.disabled = false;
+  btn.textContent = '설문 제출하기';
+  if (ok) {
+    document.getElementById('successOverlay').style.display = 'flex';
+  } else {
+    alert('저장 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+  }
 }
 
 function resetForm() {
@@ -848,9 +942,21 @@ function resetForm() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function downloadExcel() {
-  const all = getFromStorage();
-  if (all.length === 0) { alert('저장된 응답 데이터가 없습니다.'); return; }
+async function downloadExcel() {
+  const btn = document.querySelector('.dl-btn');
+  btn.textContent = '불러오는 중...';
+  btn.disabled = true;
+  const allRaw = await getFromStorage();
+  btn.textContent = '⬇ 엑셀 다운로드';
+  btn.disabled = false;
+  if (allRaw.length === 0) { alert('저장된 응답 데이터가 없습니다.'); return; }
+  // _docId, _timestamp 제거 후 엑셀 생성
+  const all = allRaw.map(r => {
+    const obj = {...r};
+    delete obj._docId;
+    delete obj._timestamp;
+    return obj;
+  });
   const ws = XLSX.utils.json_to_sheet(all);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, '설문응답');
@@ -858,11 +964,20 @@ function downloadExcel() {
   XLSX.writeFile(wb, '보일러품질설문_' + new Date().toISOString().slice(0,10) + '.xlsx');
 }
 
-function clearData() {
+async function clearData() {
   if (!confirm('모든 응답 데이터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return;
-  localStorage.removeItem(STORAGE_KEY);
-  renderAdminStats();
-  renderTable();
+  const clrBtn = document.querySelector('.clr-btn');
+  clrBtn.textContent = '삭제 중...';
+  clrBtn.disabled = true;
+  if (window.firestoreClearAll) {
+    await window.firestoreClearAll();
+  } else {
+    localStorage.removeItem(STORAGE_KEY);
+  }
+  clrBtn.textContent = '🗑 데이터 초기화';
+  clrBtn.disabled = false;
+  await renderAdminStats();
+  await renderTable();
 }
 
 /* ── 선택 UI 업데이트 ── */
