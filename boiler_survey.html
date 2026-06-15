@@ -1072,17 +1072,30 @@ async function downloadExcel() {
   btn.textContent = '⬇ 엑셀 다운로드';
   btn.disabled = false;
   if (allRaw.length === 0) { alert('저장된 응답 데이터가 없습니다.'); return; }
-  // _docId, _timestamp 제거 후 엑셀 생성
+
+  // 열 순서: 제출일시 → A-1 ~ G-1 순서 고정
+  const colOrder = [
+    '제출일시',
+    'A-1_대리점명', 'A-2_직무',
+    'B-1_박스젖음경험', 'B-2_젖음비율', 'B-3_발견시점', 'B-4_심각도(1-5)',
+    'C-1_영업영향', 'C-2_발생문제',
+    'D-1_경쟁사경험', 'D-2_경동나비엔비교', 'D-2_귀뚜라미비교', 'D-2_린나이비교',
+    'E-1_CO민원경험', 'E-2_민원발생시점', 'E-3_배터리사용기간', 'E-4_CO경보기제조사',
+    'F-1_백라이트기능인지', 'F-2_백라이트불만접수', 'F-3_희망백라이트시간',
+    'F-4_외출모드오인경험', 'F-5_외출모드개선필요성',
+    'G-1_기타의견'
+  ];
+
   const all = allRaw.map(r => {
-    const obj = {...r};
-    delete obj._docId;
-    delete obj._timestamp;
+    const obj = {};
+    colOrder.forEach(k => { obj[k] = r[k] || ''; });
     return obj;
   });
-  const ws = XLSX.utils.json_to_sheet(all);
+
+  const ws = XLSX.utils.json_to_sheet(all, { header: colOrder });
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, '설문응답');
-  ws['!cols'] = Object.keys(all[0]).map(k => ({ wch: Math.max(k.length * 2, 20) }));
+  ws['!cols'] = colOrder.map(k => ({ wch: Math.max(k.length * 2, 18) }));
   XLSX.writeFile(wb, '보일러품질설문_' + new Date().toISOString().slice(0,10) + '.xlsx');
 }
 
