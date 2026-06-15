@@ -175,6 +175,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD G
 
 /* ── 제출 완료 ── */
 .success-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 400; align-items: center; justify-content: center; }
+.success-overlay.show { animation: fadeInOut 2.5s ease forwards; }
+@keyframes fadeInOut { 0%{opacity:0} 15%{opacity:1} 75%{opacity:1} 100%{opacity:0} }
 .success-box { background: white; border-radius: 16px; padding: 36px 32px; text-align: center; max-width: 380px; margin: 0 16px; }
 .success-icon { font-size: 48px; margin-bottom: 14px; }
 .success-box h2 { font-size: 18px; color: #1a3a6b; margin-bottom: 8px; }
@@ -191,6 +193,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD G
     <p>본 설문은 보일러 박스 젖음 현상 및 CO 경보기 배터리 소진 관련 현장 경험을 파악하기 위해 실시됩니다.<br>응답 내용은 제품 품질 개선 목적으로만 활용되며 익명으로 처리됩니다.</p>
     <p class="required-note">★ 표시 항목은 필수입니다.</p>
     <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
+  </div>
+</div>
+
+<!-- 임시저장 복원 배너 -->
+<div id="draftBanner" style="display:none; background:#fff8e1; border-bottom:1px solid #ffe082; padding:10px 20px; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+  <span style="font-size:13px; color:#5d4037;">📝 이전에 작성하던 내용이 복원되었습니다.</span>
+  <div style="display:flex; gap:8px;">
+    <button onclick="dismissDraftBanner()" style="background:#fff3cd; border:1px solid #ffc107; color:#856404; padding:5px 12px; border-radius:6px; font-size:12px; cursor:pointer; font-family:inherit;">유지</button>
+    <button onclick="resetForm()" style="background:#fdecea; border:1px solid #f5c6cb; color:#842029; padding:5px 12px; border-radius:6px; font-size:12px; cursor:pointer; font-family:inherit;">새로 시작</button>
   </div>
 </div>
 
@@ -578,9 +589,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD G
 <div class="success-overlay" id="successOverlay">
   <div class="success-box">
     <div class="success-icon">✅</div>
-    <h2>설문이 제출되었습니다</h2>
+    <h2>제출이 완료되었습니다</h2>
     <p>소중한 의견을 보내주셔서 감사합니다.<br>수집된 의견은 제품 품질 개선에 적극 반영하겠습니다.</p>
-    <button class="close-success" onclick="resetForm()">새로 작성하기</button>
   </div>
 </div>
 
@@ -637,9 +647,111 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD G
 <script>
 const STORAGE_KEY = 'boiler_survey_responses';
 const PW_KEY = 'boiler_survey_admin_pw';
+const DRAFT_KEY = 'boiler_survey_draft';
 const DEFAULT_PW = 'admin1234';
 
 function getPassword() { return localStorage.getItem(PW_KEY) || DEFAULT_PW; }
+
+/* ── 임시저장 ── */
+function saveDraft() {
+  const draft = {
+    agencyName: document.getElementById('agencyName').value,
+    job: getRadioValue('job'),
+    b1: getRadioValue('b1'),
+    b2: getRadioValue('b2'),
+    b3: getCheckboxValues('b3'),
+    b3etc: document.getElementById('b3-etc-text')?.value || '',
+    b4: document.getElementById('b4').value,
+    c1: getRadioValue('c1'),
+    c2: getCheckboxValues('c2'),
+    c2etc: document.getElementById('c2-etc-text')?.value || '',
+    d1: getCheckboxValues('d1'),
+    d2n: getRadioValue('d2_경동나비엔'),
+    d2g: getRadioValue('d2_귀뚜라미'),
+    d2l: getRadioValue('d2_린나이'),
+    e1: getRadioValue('e1'),
+    e2: getCheckboxValues('e2'),
+    e3: getRadioValue('e3'),
+    e4: getCheckboxValues('e4'),
+    e4etc: document.getElementById('e4-etc-text')?.value || '',
+    f1: getRadioValue('f1'),
+    f2: getRadioValue('f2'),
+    f3: getRadioValue('f3'),
+    f3etc: document.getElementById('f3-etc-text')?.value || '',
+    f4: getRadioValue('f4'),
+    f5: getRadioValue('f5'),
+    g1: document.getElementById('g1').value,
+    jobEtc: document.getElementById('job-etc-text')?.value || '',
+  };
+  localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+}
+
+function clearDraft() {
+  localStorage.removeItem(DRAFT_KEY);
+}
+
+function restoreDraft() {
+  const raw = localStorage.getItem(DRAFT_KEY);
+  if (!raw) return;
+  let d;
+  try { d = JSON.parse(raw); } catch(e) { return; }
+
+  if (d.agencyName) document.getElementById('agencyName').value = d.agencyName;
+  if (d.jobEtc) { const el = document.getElementById('job-etc-text'); if(el) el.value = d.jobEtc; }
+  if (d.g1) document.getElementById('g1').value = d.g1;
+
+  // radio 복원 헬퍼
+  function setRadio(name, val) {
+    if (!val) return;
+    const el = document.querySelector(`input[name="${name}"][value="${CSS.escape(val)}"]`);
+    if (el) { el.checked = true; el.dispatchEvent(new Event('change', {bubbles:true})); }
+  }
+  // checkbox 복원 헬퍼
+  function setCheckboxes(name, vals) {
+    if (!vals) return;
+    vals.split(', ').forEach(v => {
+      const el = document.querySelector(`input[name="${name}"][value="${CSS.escape(v.trim())}"]`);
+      if (el) { el.checked = true; el.dispatchEvent(new Event('change', {bubbles:true})); }
+    });
+  }
+
+  setRadio('job', d.job);
+  setRadio('b1', d.b1);
+  setRadio('b2', d.b2);
+  setCheckboxes('b3', d.b3);
+  if (d.b3etc) { const el = document.getElementById('b3-etc-text'); if(el) el.value = d.b3etc; }
+  if (d.b4) selectScale('b4', parseInt(d.b4));
+  setRadio('c1', d.c1);
+  setCheckboxes('c2', d.c2);
+  if (d.c2etc) { const el = document.getElementById('c2-etc-text'); if(el) el.value = d.c2etc; }
+  setCheckboxes('d1', d.d1);
+  setRadio('d2_경동나비엔', d.d2n);
+  setRadio('d2_귀뚜라미', d.d2g);
+  setRadio('d2_린나이', d.d2l);
+  setRadio('e1', d.e1);
+  setCheckboxes('e2', d.e2);
+  setRadio('e3', d.e3);
+  setCheckboxes('e4', d.e4);
+  if (d.e4etc) { const el = document.getElementById('e4-etc-text'); if(el) el.value = d.e4etc; }
+  setRadio('f1', d.f1);
+  setRadio('f2', d.f2);
+  setRadio('f3', d.f3);
+  if (d.f3etc) { const el = document.getElementById('f3-etc-text'); if(el) el.value = d.f3etc; }
+  setRadio('f4', d.f4);
+  setRadio('f5', d.f5);
+
+  showDraftBanner();
+}
+
+function showDraftBanner() {
+  const banner = document.getElementById('draftBanner');
+  if (banner) banner.style.display = 'flex';
+}
+
+function dismissDraftBanner() {
+  const banner = document.getElementById('draftBanner');
+  if (banner) banner.style.display = 'none';
+}
 
 /* ── E-1 조건부 활성화 ── */
 document.querySelectorAll('input[name="e1"]').forEach(el => {
@@ -921,7 +1033,14 @@ async function submitSurvey() {
   btn.disabled = false;
   btn.textContent = '설문 제출하기';
   if (ok) {
-    document.getElementById('successOverlay').style.display = 'flex';
+    clearDraft();
+    const overlay = document.getElementById('successOverlay');
+    overlay.style.display = 'flex';
+    // 2.5초 후 자동으로 사라지고 폼 초기화
+    setTimeout(() => {
+      overlay.style.display = 'none';
+      resetForm();
+    }, 2500);
   } else {
     alert('저장 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
   }
@@ -939,6 +1058,9 @@ function resetForm() {
     const w = document.getElementById(id);
     if (w) { w.style.display = 'none'; const t = w.querySelector('input[type=text]'); if(t) t.value=''; }
   });
+  document.getElementById('progressBar').style.width = '0%';
+  dismissDraftBanner();
+  clearDraft();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -994,7 +1116,7 @@ document.querySelectorAll('input[type=checkbox]').forEach(el => {
   });
 });
 
-/* ── 진행률 ── */
+/* ── 진행률 + 자동임시저장 ── */
 function updateProgress() {
   let filled = 0;
   if (document.getElementById('agencyName').value.trim()) filled++;
@@ -1005,9 +1127,17 @@ function updateProgress() {
   if (getCheckboxValues('d1')) filled++;
   if (getRadioValue('e1')) filled++;
   document.getElementById('progressBar').style.width = Math.round((filled/7)*100) + '%';
+  saveDraft();
 }
 document.addEventListener('change', updateProgress);
 document.getElementById('agencyName').addEventListener('input', updateProgress);
+document.getElementById('g1').addEventListener('input', saveDraft);
+
+// 페이지 로드 시 임시저장 복원
+window.addEventListener('load', () => {
+  const hasDraft = localStorage.getItem(DRAFT_KEY);
+  if (hasDraft) restoreDraft();
+});
 </script>
 </body>
 </html>
