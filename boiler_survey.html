@@ -112,13 +112,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD G
 .scale-btn { width: 40px; height: 40px; border: 1.5px solid #d0d5e5; border-radius: 8px; background: white; cursor: pointer; font-size: 14px; font-weight: 500; color: #555; transition: all 0.15s; }
 .scale-btn:hover { border-color: #1a3a6b; color: #1a3a6b; background: #f0f4ff; }
 .scale-btn.selected { background: #1a3a6b; border-color: #1a3a6b; color: white; }
-.competitor-table { padding-left: 38px; overflow-x: auto; }
-.comp-table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 480px; }
-.comp-table th { background: #f0f4ff; color: #1a3a6b; font-weight: 600; padding: 8px 10px; text-align: center; border: 1px solid #dde3f0; font-size: 12px; white-space: nowrap; }
-.comp-table td { padding: 8px 10px; border: 1px solid #e8eaf0; text-align: center; }
-.comp-table td:first-child { text-align: left; font-weight: 500; color: #333; }
+.competitor-table { padding-left: 38px; overflow-x: auto; max-width: 100%; }
+.comp-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.comp-table th { background: #f0f4ff; color: #1a3a6b; font-weight: 600; padding: 6px 4px; text-align: center; border: 1px solid #dde3f0; font-size: 11px; white-space: normal; word-break: keep-all; line-height: 1.4; max-width: 72px; }
+.comp-table td { padding: 7px 6px; border: 1px solid #e8eaf0; text-align: center; }
+.comp-table td:first-child { text-align: left; font-weight: 500; color: #333; white-space: nowrap; padding-left: 8px; }
 .comp-table tr:nth-child(even) td { background: #fafbff; }
-.comp-table input[type=radio] { accent-color: #1a3a6b; width: 15px; height: 15px; cursor: pointer; }
+.comp-table input[type=radio] { accent-color: #1a3a6b; width: 16px; height: 16px; cursor: pointer; }
 .textarea-input { width: 100%; border: 1px solid #d8dde8; border-radius: 8px; padding: 12px 14px; font-size: 14px; outline: none; resize: vertical; min-height: 90px; font-family: inherit; background: #fafbff; }
 .textarea-input:focus { border-color: #1a3a6b; background: white; }
 .submit-area { text-align: center; margin-top: 28px; }
@@ -262,7 +262,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD G
     <div class="section-header"><span class="section-badge">B</span><span class="section-title">박스 젖음 현상 경험</span></div>
     <div class="section-body">
       <div class="q-block">
-        <div class="q-label"><span class="q-num">B-2</span>최근 수령한 제품 중 박스가 젖어 있는 경우는 몇 대 정도 경험하셨습니까?</div>
+        <div class="q-label"><span class="q-num">B-1</span>최근 수령한 제품 중 박스가 젖어 있는 경우는 몇 대 정도 경험하셨습니까?</div>
         <div style="padding-left:38px; display:flex; flex-direction:column; gap:12px;">
           <div style="display:flex; align-items:center; gap:12px;">
             <label style="font-size:14px; font-weight:600; color:#1a3a6b; min-width:60px;">2025년</label>
@@ -281,7 +281,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD G
         </div>
       </div>
       <div class="q-block">
-        <div class="q-label"><span class="q-num">B-3</span>박스 젖음이 주로 발견되는 시점은 언제입니까? <span style="font-size:12px;color:#888;">(복수 선택 가능)</span></div>
+        <div class="q-label"><span class="q-num">B-2</span>박스 젖음이 주로 발견되는 시점은 언제입니까? <span style="font-size:12px;color:#888;">(복수 선택 가능)</span></div>
         <div class="options-list">
           <label class="option-item checkbox-item"><input type="checkbox" name="b3" value="대리점 입고 시"> 대리점 입고 시</label>
           <label class="option-item checkbox-item"><input type="checkbox" name="b3" value="고객 납품/배송 완료 후"> 고객 납품 / 배송 완료 후</label>
@@ -294,20 +294,20 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD G
         </div>
       </div>
       <div class="q-block">
-        <div class="q-label"><span class="q-num">B-4</span>박스 젖음의 정도를 전반적으로 어떻게 평가하십니까? <span class="required-star">★</span></div>
+        <div class="q-label"><span class="q-num">B-3</span>박스 젖음의 정도를 전반적으로 어떻게 평가하십니까? <span class="required-star">★</span></div>
         <div class="scale-wrap">
           <span class="scale-label">전혀 심하지 않음</span>
-          <div class="scale-btns" id="b4Scale">
-            <button type="button" class="scale-btn" onclick="selectScale('b4',1)">1</button>
-            <button type="button" class="scale-btn" onclick="selectScale('b4',2)">2</button>
-            <button type="button" class="scale-btn" onclick="selectScale('b4',3)">3</button>
-            <button type="button" class="scale-btn" onclick="selectScale('b4',4)">4</button>
-            <button type="button" class="scale-btn" onclick="selectScale('b4',5)">5</button>
+          <div class="scale-btns" id="b3Scale">
+            <button type="button" class="scale-btn" onclick="selectScale('b3',1)">1</button>
+            <button type="button" class="scale-btn" onclick="selectScale('b3',2)">2</button>
+            <button type="button" class="scale-btn" onclick="selectScale('b3',3)">3</button>
+            <button type="button" class="scale-btn" onclick="selectScale('b3',4)">4</button>
+            <button type="button" class="scale-btn" onclick="selectScale('b3',5)">5</button>
           </div>
           <span class="scale-label">매우 심함</span>
         </div>
-        <input type="hidden" id="b4" value="">
-        <div class="error-msg" id="err-b4">평가 점수를 선택해 주세요.</div>
+        <input type="hidden" id="b3" value="">
+        <div class="error-msg" id="err-b3">평가 점수를 선택해 주세요.</div>
       </div>
     </div>
   </div>
@@ -705,7 +705,7 @@ function saveDraft() {
     b2_2026: document.getElementById('b2_2026').value || '',
     b3: getCheckboxValues('b3'),
     b3etc: document.getElementById('b3-etc-text')?.value || '',
-    b4: document.getElementById('b4').value,
+    b3scale: document.getElementById('b3').value,
     c1: document.getElementById('c1').value,
     c2: getCheckboxValues('c2'),
     c2etc: document.getElementById('c2-etc-text')?.value || '',
@@ -764,7 +764,7 @@ function restoreDraft() {
   if (d.b2_2026) document.getElementById('b2_2026').value = d.b2_2026;
   setCheckboxes('b3', d.b3);
   if (d.b3etc) { const el = document.getElementById('b3-etc-text'); if(el) el.value = d.b3etc; }
-  if (d.b4) selectScale('b4', parseInt(d.b4));
+  if (d.b4) selectScale('b3', parseInt(d.b3scale));
   if (d.c1) selectScale('c1', parseInt(d.c1));
   setCheckboxes('c2', d.c2);
   if (d.c2etc) { const el = document.getElementById('c2-etc-text'); if(el) el.value = d.c2etc; }
@@ -893,10 +893,10 @@ async function renderAnalysis() {
   // 분석 정의: [섹션배지, 섹션명, 질문번호, 질문제목, 데이터키, 타입(radio/checkbox)]
   const questions = [
     ['A','기본 정보','A-2','직무','A-2_직무','radio'],
-    ['B','박스 젖음','B-2','2025년 박스 젖음 경험 대수','B-2_젖음경험_2025년(대)','text'],
-    ['B','박스 젖음','B-2','2026년 박스 젖음 경험 대수','B-2_젖음경험_2026년(대)','text'],
-    ['B','박스 젖음','B-3','박스 젖음 발견 시점','B-3_발견시점','checkbox'],
-    ['B','박스 젖음','B-4','박스 젖음 심각도 (1~5점)','B-4_심각도(1-5)','radio'],
+    ['B','박스 젖음','B-1','2025년 박스 젖음 경험 대수','B-2_젖음경험_2025년(대)','text'],
+    ['B','박스 젖음','B-1','2026년 박스 젖음 경험 대수','B-2_젖음경험_2026년(대)','text'],
+    ['B','박스 젖음','B-2','박스 젖음 발견 시점','B-3_발견시점','checkbox'],
+    ['B','박스 젖음','B-3','박스 젖음 심각도 (1~5점)','B-3_심각도(1-5)','radio'],
     ['C','영업 영향','C-1','영업 활동 영향 심각도 (1~5점)','C-1_영업영향_심각도(1-5)','radio'],
     ['C','영업 영향','C-2','실제 발생 문제','C-2_발생문제','checkbox'],
     ['D','경쟁사 비교','D-1','경쟁사 취급 경험','D-1_경쟁사경험','checkbox'],
@@ -1027,7 +1027,7 @@ async function renderAdminStats() {
 const COL_LABELS = [
   ['제출일시','제출일시'],['A-1_대리점명','대리점명'],['A-2_직무','직무'],
   ['B-2_젖음경험_2025년(대)','B-2 2025년(대)'],['B-2_젖음경험_2026년(대)','B-2 2026년(대)'],['B-3_발견시점','B-3 발견시점'],
-  ['B-4_심각도(1-5)','B-4 심각도'],['C-1_영업영향_심각도(1-5)','C-1 영업영향(1-5)'],['C-2_발생문제','C-2 발생문제'],
+  ['B-3_심각도(1-5)','B-3 심각도'],['C-1_영업영향_심각도(1-5)','C-1 영업영향(1-5)'],['C-2_발생문제','C-2 발생문제'],
   ['D-1_경쟁사경험','D-1 경쟁사'],['D-2_경동나비엔비교','D-2 경동'],['D-2_귀뚜라미비교','D-2 귀뚜라미'],
   ['D-2_린나이비교','D-2 린나이'],['E-1_CO민원경험','E-1 CO민원'],['E-2_민원발생시점','E-2 시점'],
   ['E-3_배터리사용기간','E-3 배터리'],['E-4_CO경보기제조사','E-4 제조사'],
@@ -1108,8 +1108,8 @@ function validateForm() {
   const job = getRadioValue('job');
   showError('job', !job); if (!job) valid = false;
 
-  const b4 = document.getElementById('b4').value;
-  showError('b4', !b4); if (!b4) valid = false;
+  const b4 = document.getElementById('b3').value;
+  showError('b3', !b4); if (!b4) valid = false;
   const c1 = document.getElementById('c1').value;
   showError('c1', !c1); if (!c1) valid = false;
   const d1 = getCheckboxValues('d1');
@@ -1136,7 +1136,7 @@ function collectData() {
     'B-2_젖음경험_2025년(대)': document.getElementById('b2_2025').value || '0',
     'B-2_젖음경험_2026년(대)': document.getElementById('b2_2026').value || '0',
     'B-3_발견시점': (function(){ let vals=Array.from(document.querySelectorAll('input[name="b3"]:checked')).map(e=>{ if(e.value==='기타'){const t=document.getElementById('b3-etc-text')?.value.trim(); return t?'기타: '+t:'기타';} return e.value; }); return vals.join(', '); })(),
-    'B-4_심각도(1-5)': document.getElementById('b4').value,
+    'B-3_심각도(1-5)': document.getElementById('b3').value,
     'C-1_영업영향_심각도(1-5)': document.getElementById('c1').value,
     'C-2_발생문제': (function(){ let vals=Array.from(document.querySelectorAll('input[name="c2"]:checked')).map(e=>{ if(e.value==='기타'){const t=document.getElementById('c2-etc-text')?.value.trim(); return t?'기타: '+t:'기타';} return e.value; }); return vals.join(', '); })(),
     'D-1_경쟁사경험': getCheckboxValues('d1'),
@@ -1206,7 +1206,7 @@ function resetForm() {
   document.getElementById('successOverlay').style.display = 'none';
   document.querySelectorAll('input[type=radio], input[type=checkbox]').forEach(el => el.checked = false);
   document.querySelectorAll('input[type=text], input[type=number], textarea').forEach(el => el.value = '');
-  document.getElementById('b4').value = '';
+  document.getElementById('b3').value = '';
   document.getElementById('c1').value = '';
   document.querySelectorAll('.scale-btn').forEach(b => b.classList.remove('selected'));
   document.querySelectorAll('.option-item').forEach(b => b.classList.remove('selected'));
@@ -1234,7 +1234,7 @@ async function downloadExcel() {
   const colOrder = [
     '제출일시',
     'A-1_대리점명', 'A-2_직무',
-    'B-2_젖음경험_2025년(대)', 'B-2_젖음경험_2026년(대)', 'B-3_발견시점', 'B-4_심각도(1-5)',
+    'B-2_젖음경험_2025년(대)', 'B-2_젖음경험_2026년(대)', 'B-3_발견시점', 'B-3_심각도(1-5)',
     'C-1_영업영향_심각도(1-5)', 'C-2_발생문제',
     'D-1_경쟁사경험', 'D-2_경동나비엔비교', 'D-2_귀뚜라미비교', 'D-2_린나이비교',
     'E-1_CO민원경험', 'E-2_민원발생시점', 'E-3_배터리사용기간', 'E-4_CO경보기제조사',
@@ -1292,7 +1292,7 @@ function updateProgress() {
   if (document.getElementById('agencyName').value.trim()) filled++;
   if (getRadioValue('job')) filled++;
   if (getRadioValue('b1')) filled++;
-  if (document.getElementById('b4').value) filled++;
+  if (document.getElementById('b3').value) filled++;
   if (getRadioValue('c1')) filled++;
   if (getCheckboxValues('d1')) filled++;
   if (getRadioValue('e1')) filled++;
