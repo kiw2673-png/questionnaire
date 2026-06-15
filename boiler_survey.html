@@ -434,14 +434,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD G
         <div style="padding-left:38px;">
           <p style="font-size:12px;color:#888;margin-bottom:8px;font-weight:500;">▸ 과거 민원 (현재는 없음)</p>
           <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;">
-            <label class="option-item checkbox-item"><input type="checkbox" name="e2" value="3년 이전에 발생, 현재는 없음"> 3년 이전에 발생, 현재는 없음</label>
-            <label class="option-item checkbox-item"><input type="checkbox" name="e2" value="2~3년 전에 발생, 현재는 없음"> 2~3년 전에 발생, 현재는 없음</label>
-            <label class="option-item checkbox-item"><input type="checkbox" name="e2" value="1~2년 전에 발생, 현재는 없음"> 1~2년 전에 발생, 현재는 없음</label>
+            <label class="option-item checkbox-item"><input type="checkbox" name="e2" value="3년 이전 발생 / 현재 없음"> 3년 이전에 발생 / 현재는 없음</label>
+            <label class="option-item checkbox-item"><input type="checkbox" name="e2" value="2~3년 전 발생 / 현재 없음"> 2~3년 전에 발생 / 현재는 없음</label>
+            <label class="option-item checkbox-item"><input type="checkbox" name="e2" value="1~2년 전 발생 / 현재 없음"> 1~2년 전에 발생 / 현재는 없음</label>
           </div>
           <p style="font-size:12px;color:#888;margin-bottom:8px;font-weight:500;">▸ 최근 민원 (현재 진행 중)</p>
           <div style="display:flex;flex-direction:column;gap:6px;">
             <label class="option-item checkbox-item"><input type="checkbox" name="e2" value="6개월~1년 전부터 현재까지 지속"> 6개월~1년 전부터 현재까지 지속</label>
-            <label class="option-item checkbox-item"><input type="checkbox" name="e2" value="6개월 이내 발생, 현재도 접수 중"> 6개월 이내 발생, 현재도 접수 중</label>
+            <label class="option-item checkbox-item"><input type="checkbox" name="e2" value="6개월 이내 발생 / 현재도 접수 중"> 6개월 이내 발생 / 현재도 접수 중</label>
             <label class="option-item checkbox-item"><input type="checkbox" name="e2" value="최근 1개월 이내 새로 발생"> 최근 1개월 이내 새로 발생</label>
           </div>
         </div>
@@ -714,7 +714,7 @@ function saveDraft() {
     d2g: getRadioValue('d2_귀뚜라미'),
     d2l: getRadioValue('d2_린나이'),
     e1: getRadioValue('e1'),
-    e2: getCheckboxValues('e2'),
+    e2: Array.from(document.querySelectorAll('input[name="e2"]:checked')).map(e=>e.value).join('||'),
     e3: getRadioValue('e3'),
     e4: getCheckboxValues('e4'),
     e4etc: document.getElementById('e4-etc-text')?.value || '',
@@ -773,7 +773,7 @@ function restoreDraft() {
   setRadio('d2_귀뚜라미', d.d2g);
   setRadio('d2_린나이', d.d2l);
   setRadio('e1', d.e1);
-  setCheckboxes('e2', d.e2);
+  if (d.e2) { d.e2.split('||').forEach(v => { const el = document.querySelector(`input[name="e2"][value="${v.trim()}"]`); if(el){el.checked=true; el.dispatchEvent(new Event('change',{bubbles:true}));} }); }
   setRadio('e3', d.e3);
   setCheckboxes('e4', d.e4);
   if (d.e4etc) { const el = document.getElementById('e4-etc-text'); if(el) el.value = d.e4etc; }
@@ -1026,7 +1026,7 @@ async function renderAdminStats() {
 /* ── 테이블 렌더링 ── */
 const COL_LABELS = [
   ['제출일시','제출일시'],['A-1_대리점명','대리점명'],['A-2_직무','직무'],
-  ['B-2_젖음경험_2025년(대)','B-2 2025년(대)'],['B-2_젖음경험_2026년(대)','B-2 2026년(대)'],['B-3_발견시점','B-3 발견시점'],
+  ['B-2_젖음경험_2025년(대)','B-1 2025년(대)'],['B-2_젖음경험_2026년(대)','B-1 2026년(대)'],['B-3_발견시점','B-2 발견시점'],
   ['B-3_심각도(1-5)','B-3 심각도'],['C-1_영업영향_심각도(1-5)','C-1 영업영향(1-5)'],['C-2_발생문제','C-2 발생문제'],
   ['D-1_경쟁사경험','D-1 경쟁사'],['D-2_경동나비엔비교','D-2 경동'],['D-2_귀뚜라미비교','D-2 귀뚜라미'],
   ['D-2_린나이비교','D-2 린나이'],['E-1_CO민원경험','E-1 CO민원'],['E-2_민원발생시점','E-2 시점'],
@@ -1144,9 +1144,9 @@ function collectData() {
     'D-2_귀뚜라미비교': getRadioValue('d2_귀뚜라미'),
     'D-2_린나이비교': getRadioValue('d2_린나이'),
     'E-1_CO민원경험': getRadioValue('e1'),
-    'E-2_민원발생시점': getCheckboxValues('e2'),
-    'E-3_배터리사용기간': getRadioValue('e3'),
-    'E-4_CO경보기제조사': (function(){ let vals=Array.from(document.querySelectorAll('input[name="e4"]:checked')).map(e=>{ if(e.value==='기타'){const t=document.getElementById('e4-etc-text')?.value.trim(); return t?'기타: '+t:'기타';} return e.value; }); return vals.join(', '); })(),
+    'E-2_민원발생시점': getRadioValue('e1').startsWith('예') ? getCheckboxValues('e2') : '',
+    'E-3_배터리사용기간': getRadioValue('e1').startsWith('예') ? getRadioValue('e3') : '',
+    'E-4_CO경보기제조사': getRadioValue('e1').startsWith('예') ? (function(){ let vals=Array.from(document.querySelectorAll('input[name="e4"]:checked')).map(e=>{ if(e.value==='기타'){const t=document.getElementById('e4-etc-text')?.value.trim(); return t?'기타: '+t:'기타';} return e.value; }); return vals.join(', '); })() : '',
     'F-1_백라이트기능인지': getRadioValue('f1'),
     'F-2_백라이트민원건수': document.getElementById('f2Count').value || '0',
     'F-3_희망백라이트시간': (function(){ const v=getRadioValue('f3'); if(v==='기타'){const t=document.getElementById('f3-etc-text')?.value.trim(); return t?'기타: '+t:'기타';} return v; })(),
