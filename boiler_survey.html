@@ -690,6 +690,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD G
     <div class="admin-tabs">
       <button class="admin-tab active" onclick="switchTab('tabList')">📄 응답 목록</button>
       <button class="admin-tab" onclick="switchTab('tabAnalysis')">📊 질문항목별 확인</button>
+      <button class="admin-tab" onclick="switchTab('tabAddResponse')">➕ 응답 추가</button>
     </div>
 
     <!-- 탭1: 응답 목록 -->
@@ -706,6 +707,224 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD G
     <!-- 탭2: 질문항목별 분석 -->
     <div class="tab-panel" id="tabAnalysis">
       <div id="analysisWrap"></div>
+    </div>
+
+    <!-- 탭3: 응답 추가 -->
+    <div class="tab-panel" id="tabAddResponse">
+      <div style="max-width:680px;">
+
+        <div style="font-size:12px;font-weight:600;color:#1a3a6b;margin:0 0 8px;padding-left:4px;">─── 기본 정보</div>
+        <div class="q-analysis-card" style="margin-bottom:14px;"><div class="q-analysis-body" style="display:flex;flex-direction:column;gap:14px;">
+          <div>
+            <div style="font-size:13px;font-weight:500;margin-bottom:6px;">A-1. 대리점명 <span class="required-star">★</span></div>
+            <input type="text" id="adm_agencyName" class="modal-input" placeholder="대리점명을 입력해 주세요" />
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:500;margin-bottom:6px;">A-2. 직무 <span class="required-star">★</span></div>
+            <div style="display:flex;flex-wrap:wrap;gap:12px;">
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:5px;"><input type="radio" name="adm_job" value="영업"> 영업</label>
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:5px;"><input type="radio" name="adm_job" value="설치"> 설치</label>
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:5px;"><input type="radio" name="adm_job" value="AS"> AS</label>
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:5px;"><input type="radio" name="adm_job" value="대리점 대표"> 대리점 대표</label>
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:5px;"><input type="radio" name="adm_job" value="기타"> 기타</label>
+            </div>
+            <input type="text" id="adm_job_etc" class="modal-input" placeholder="기타 직무 입력" style="margin-top:8px;display:none;" />
+          </div>
+        </div></div>
+
+        <div style="font-size:12px;font-weight:600;color:#1a3a6b;margin:4px 0 8px;padding-left:4px;">─── 박스 젖음 현상</div>
+        <div class="q-analysis-card" style="margin-bottom:14px;"><div class="q-analysis-body" style="display:flex;flex-direction:column;gap:14px;">
+          <div>
+            <div style="font-size:13px;font-weight:500;margin-bottom:6px;">B-1. 연도별 젖음 경험 대수 <span class="required-star">★</span></div>
+            <div style="display:flex;gap:20px;flex-wrap:wrap;">
+              <div style="display:flex;align-items:center;gap:8px;"><label style="font-size:13px;font-weight:600;color:#1a3a6b;">2025년</label><input type="number" id="adm_b2025" min="0" class="modal-input" style="width:80px;text-align:center;" placeholder="0" /><span style="font-size:13px;">대</span></div>
+              <div style="display:flex;align-items:center;gap:8px;"><label style="font-size:13px;font-weight:600;color:#1a3a6b;">2026년</label><input type="number" id="adm_b2026" min="0" class="modal-input" style="width:80px;text-align:center;" placeholder="0" /><span style="font-size:13px;">대</span></div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:500;margin-bottom:6px;">B-2. 발견 시점 <span style="font-size:11px;color:#888;">(복수 선택)</span> <span class="required-star">★</span></div>
+            <div style="display:flex;flex-direction:column;gap:5px;">
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="checkbox" name="adm_b3" value="대리점 입고 시"> 대리점 입고 시</label>
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="checkbox" name="adm_b3" value="고객 납품/배송 완료 후"> 고객 납품/배송 완료 후</label>
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="checkbox" name="adm_b3" value="현장 설치 전 포장 개봉 시"> 현장 설치 전 포장 개봉 시</label>
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="checkbox" name="adm_b3" value="고객이 직접 개봉 후 민원 접수"> 고객이 직접 개봉 후 민원 접수</label>
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="checkbox" name="adm_b3" value="기타"> 기타</label>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:500;margin-bottom:8px;">B-3. 박스 젖음 심각도 <span class="required-star">★</span></div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span style="font-size:11px;color:#888;">전혀 심하지 않음</span>
+              <div id="adm_b3Scale" style="display:flex;gap:6px;">
+                <button type="button" class="scale-btn" onclick="admSelectScale('b3',1)">1</button>
+                <button type="button" class="scale-btn" onclick="admSelectScale('b3',2)">2</button>
+                <button type="button" class="scale-btn" onclick="admSelectScale('b3',3)">3</button>
+                <button type="button" class="scale-btn" onclick="admSelectScale('b3',4)">4</button>
+                <button type="button" class="scale-btn" onclick="admSelectScale('b3',5)">5</button>
+              </div>
+              <span style="font-size:11px;color:#888;">매우 심함</span>
+              <input type="hidden" id="adm_b3" value="">
+            </div>
+          </div>
+        </div></div>
+
+        <div style="font-size:12px;font-weight:600;color:#1a3a6b;margin:4px 0 8px;padding-left:4px;">─── 영업 및 업무 영향도</div>
+        <div class="q-analysis-card" style="margin-bottom:14px;"><div class="q-analysis-body" style="display:flex;flex-direction:column;gap:14px;">
+          <div>
+            <div style="font-size:13px;font-weight:500;margin-bottom:8px;">C-1. 영업 활동 영향 심각도 <span class="required-star">★</span></div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span style="font-size:11px;color:#888;">문제되지 않음</span>
+              <div id="adm_c1Scale" style="display:flex;gap:6px;">
+                <button type="button" class="scale-btn" onclick="admSelectScale('c1',1)">1</button>
+                <button type="button" class="scale-btn" onclick="admSelectScale('c1',2)">2</button>
+                <button type="button" class="scale-btn" onclick="admSelectScale('c1',3)">3</button>
+                <button type="button" class="scale-btn" onclick="admSelectScale('c1',4)">4</button>
+                <button type="button" class="scale-btn" onclick="admSelectScale('c1',5)">5</button>
+              </div>
+              <span style="font-size:11px;color:#888;">심각한 지장</span>
+              <input type="hidden" id="adm_c1" value="">
+            </div>
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:500;margin-bottom:6px;">C-2. 실제 발생 문제 <span style="font-size:11px;color:#888;">(복수 선택)</span> <span class="required-star">★</span></div>
+            <div style="display:flex;flex-direction:column;gap:5px;">
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="checkbox" name="adm_c2" value="고객 불만 접수 / 클레임"> 고객 불만 접수 / 클레임</label>
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="checkbox" name="adm_c2" value="제품 교환 또는 반품 요청"> 제품 교환 또는 반품 요청</label>
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="checkbox" name="adm_c2" value="제품 불량 오인으로 인한 신뢰도 저하"> 제품 불량 오인으로 인한 신뢰도 저하</label>
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="checkbox" name="adm_c2" value="박스 파손으로 인한 운반/보관 불편"> 박스 파손으로 인한 운반/보관 불편</label>
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="checkbox" name="adm_c2" value="판매 기회 손실"> 판매 기회 손실</label>
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="checkbox" name="adm_c2" value="해당 없음"> 해당 없음</label>
+            </div>
+          </div>
+        </div></div>
+
+        <div style="font-size:12px;font-weight:600;color:#1a3a6b;margin:4px 0 8px;padding-left:4px;">─── 경쟁사 비교</div>
+        <div class="q-analysis-card" style="margin-bottom:14px;"><div class="q-analysis-body" style="display:flex;flex-direction:column;gap:14px;">
+          <div>
+            <div style="font-size:13px;font-weight:500;margin-bottom:6px;">D-1. 경쟁사 취급 경험 <span style="font-size:11px;color:#888;">(복수 선택)</span> <span class="required-star">★</span></div>
+            <div style="display:flex;flex-direction:column;gap:5px;">
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="checkbox" name="adm_d1" value="경동나비엔"> 경동나비엔</label>
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="checkbox" name="adm_d1" value="귀뚜라미"> 귀뚜라미</label>
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="checkbox" name="adm_d1" value="린나이"> 린나이</label>
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="checkbox" name="adm_d1" value="경쟁사 제품 접한 경험 없음"> 경쟁사 제품 접한 경험 없음</label>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:500;margin-bottom:6px;">D-2. 경쟁사 박스 젖음 비교 <span class="required-star">★</span></div>
+            <div style="overflow-x:auto;">
+              <table class="comp-table">
+                <thead><tr><th>경쟁사</th><th>훨씬 적음</th><th>약간 적음</th><th>비슷</th><th>약간 심함</th><th>훨씬 심함</th><th>경험 없음</th></tr></thead>
+                <tbody>
+                  <tr><td>경동나비엔</td><td><input type="radio" name="adm_d2_경동나비엔" value="당사보다 훨씬 적음"></td><td><input type="radio" name="adm_d2_경동나비엔" value="당사보다 약간 적음"></td><td><input type="radio" name="adm_d2_경동나비엔" value="당사와 비슷"></td><td><input type="radio" name="adm_d2_경동나비엔" value="당사보다 약간 심함"></td><td><input type="radio" name="adm_d2_경동나비엔" value="당사보다 훨씬 심함"></td><td><input type="radio" name="adm_d2_경동나비엔" value="경험 없음"></td></tr>
+                  <tr><td>귀뚜라미</td><td><input type="radio" name="adm_d2_귀뚜라미" value="당사보다 훨씬 적음"></td><td><input type="radio" name="adm_d2_귀뚜라미" value="당사보다 약간 적음"></td><td><input type="radio" name="adm_d2_귀뚜라미" value="당사와 비슷"></td><td><input type="radio" name="adm_d2_귀뚜라미" value="당사보다 약간 심함"></td><td><input type="radio" name="adm_d2_귀뚜라미" value="당사보다 훨씬 심함"></td><td><input type="radio" name="adm_d2_귀뚜라미" value="경험 없음"></td></tr>
+                  <tr><td>린나이</td><td><input type="radio" name="adm_d2_린나이" value="당사보다 훨씬 적음"></td><td><input type="radio" name="adm_d2_린나이" value="당사보다 약간 적음"></td><td><input type="radio" name="adm_d2_린나이" value="당사와 비슷"></td><td><input type="radio" name="adm_d2_린나이" value="당사보다 약간 심함"></td><td><input type="radio" name="adm_d2_린나이" value="당사보다 훨씬 심함"></td><td><input type="radio" name="adm_d2_린나이" value="경험 없음"></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div></div>
+
+        <div style="font-size:12px;font-weight:600;color:#1a3a6b;margin:4px 0 8px;padding-left:4px;">─── CO 경보기</div>
+        <div class="q-analysis-card" style="margin-bottom:14px;"><div class="q-analysis-body" style="display:flex;flex-direction:column;gap:14px;">
+          <div>
+            <div style="font-size:13px;font-weight:500;margin-bottom:6px;">E-1. CO 배터리 민원 접수 여부 <span class="required-star">★</span></div>
+            <div style="display:flex;flex-direction:column;gap:5px;">
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="radio" name="adm_e1" value="예, 민원을 받은 적 있습니다" onchange="admToggleE()"> 예, 민원을 받은 적 있습니다</label>
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="radio" name="adm_e1" value="아니요, 받은 적 없습니다" onchange="admToggleE()"> 아니요, 받은 적 없습니다</label>
+            </div>
+          </div>
+          <div id="adm_e_cond" style="display:none;border-top:1px solid #eee;padding-top:12px;flex-direction:column;gap:14px;">
+            <div>
+              <div style="font-size:13px;font-weight:500;margin-bottom:6px;">E-2. 민원 발생 시점 <span style="font-size:11px;color:#888;">(복수 선택)</span> <span class="required-star">★</span></div>
+              <div style="display:flex;flex-direction:column;gap:5px;">
+                <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="checkbox" name="adm_e2" value="3년 이전 발생 / 현재 없음"> 3년 이전 발생 / 현재 없음</label>
+                <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="checkbox" name="adm_e2" value="2~3년 전 발생 / 현재 없음"> 2~3년 전 발생 / 현재 없음</label>
+                <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="checkbox" name="adm_e2" value="1~2년 전 발생 / 현재 없음"> 1~2년 전 발생 / 현재 없음</label>
+                <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="checkbox" name="adm_e2" value="6개월~1년 전부터 현재까지 지속"> 6개월~1년 전부터 현재까지 지속</label>
+                <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="checkbox" name="adm_e2" value="6개월 이내 발생 / 현재도 접수 중"> 6개월 이내 발생 / 현재도 접수 중</label>
+                <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="checkbox" name="adm_e2" value="최근 1개월 이내 새로 발생"> 최근 1개월 이내 새로 발생</label>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:13px;font-weight:500;margin-bottom:6px;">E-3. 고객 체감 배터리 사용 기간 <span class="required-star">★</span></div>
+              <div style="display:flex;flex-direction:column;gap:5px;">
+                <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="radio" name="adm_e3" value="1개월 미만"> 1개월 미만</label>
+                <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="radio" name="adm_e3" value="1개월 이상 ~ 3개월 미만"> 1개월 이상 ~ 3개월 미만</label>
+                <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="radio" name="adm_e3" value="3개월 이상 ~ 6개월 미만"> 3개월 이상 ~ 6개월 미만</label>
+                <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="radio" name="adm_e3" value="6개월 이상 ~ 1년 미만"> 6개월 이상 ~ 1년 미만</label>
+                <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="radio" name="adm_e3" value="1년 이상"> 1년 이상</label>
+                <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="radio" name="adm_e3" value="잘 모름 / 고객이 구체적 기간 미제공"> 잘 모름 / 고객이 구체적 기간 미제공</label>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:13px;font-weight:500;margin-bottom:6px;">E-4. CO 경보기 제조업체 <span style="font-size:11px;color:#888;">(복수 선택)</span> <span class="required-star">★</span></div>
+              <div style="display:flex;flex-direction:column;gap:5px;">
+                <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="checkbox" name="adm_e4" value="수산홈텍"> 수산홈텍</label>
+                <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="checkbox" name="adm_e4" value="아지스"> 아지스</label>
+                <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="checkbox" name="adm_e4" value="진연"> 진연</label>
+                <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="checkbox" name="adm_e4" value="업체 불명 / 모름"> 업체 불명 / 모름</label>
+              </div>
+            </div>
+          </div>
+        </div></div>
+
+        <div style="font-size:12px;font-weight:600;color:#1a3a6b;margin:4px 0 8px;padding-left:4px;">─── 조절기</div>
+        <div class="q-analysis-card" style="margin-bottom:14px;"><div class="q-analysis-body" style="display:flex;flex-direction:column;gap:14px;">
+          <div>
+            <div style="font-size:13px;font-weight:500;margin-bottom:6px;">F-1. 백라이트 기능 추가 인지 여부 <span class="required-star">★</span></div>
+            <div style="display:flex;flex-direction:column;gap:5px;">
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="radio" name="adm_f1" value="예, 알고 있었습니다"> 예, 알고 있었습니다</label>
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="radio" name="adm_f1" value="아니요, 몰랐습니다"> 아니요, 몰랐습니다</label>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:500;margin-bottom:6px;">F-2. 백라이트 시간 민원 건수 <span class="required-star">★</span></div>
+            <div style="display:flex;align-items:center;gap:8px;"><input type="number" id="adm_f2Count" min="0" class="modal-input" style="width:100px;text-align:center;" placeholder="0" /><span style="font-size:13px;">건</span></div>
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:500;margin-bottom:6px;">F-3. 희망 백라이트 유지 시간 <span class="required-star">★</span></div>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;">
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:5px;"><input type="radio" name="adm_f3" value="10초"> 10초</label>
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:5px;"><input type="radio" name="adm_f3" value="20초"> 20초</label>
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:5px;"><input type="radio" name="adm_f3" value="30초"> 30초</label>
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:5px;"><input type="radio" name="adm_f3" value="40초"> 40초</label>
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:5px;"><input type="radio" name="adm_f3" value="50초"> 50초</label>
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:5px;"><input type="radio" name="adm_f3" value="기타"> 기타</label>
+            </div>
+            <input type="text" id="adm_f3_etc" class="modal-input" placeholder="기타 희망 시간 입력" style="margin-top:8px;display:none;" />
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:500;margin-bottom:6px;">F-4. 외출모드 난방 오인 경험 <span class="required-star">★</span></div>
+            <div style="display:flex;flex-direction:column;gap:5px;">
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="radio" name="adm_f4" value="예, 오인 경험이 있습니다"> 예, 오인 경험이 있습니다</label>
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="radio" name="adm_f4" value="아니요, 경험한 적 없습니다"> 아니요, 경험한 적 없습니다</label>
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="radio" name="adm_f4" value="해당 모델 미취급"> 해당 모델 미취급</label>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:500;margin-bottom:6px;">F-5. 외출모드 개선 필요성 <span class="required-star">★</span></div>
+            <div style="display:flex;flex-direction:column;gap:5px;">
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="radio" name="adm_f5" value="매우 필요합니다"> 매우 필요합니다</label>
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="radio" name="adm_f5" value="필요합니다"> 필요합니다</label>
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="radio" name="adm_f5" value="보통입니다"> 보통입니다</label>
+              <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><input type="radio" name="adm_f5" value="필요하지 않습니다"> 필요하지 않습니다</label>
+            </div>
+          </div>
+        </div></div>
+
+        <div style="font-size:12px;font-weight:600;color:#1a3a6b;margin:4px 0 8px;padding-left:4px;">─── 기타 의견</div>
+        <div class="q-analysis-card" style="margin-bottom:20px;"><div class="q-analysis-body">
+          <div style="font-size:13px;font-weight:500;margin-bottom:6px;">G-1. 기타 의견 <span class="required-star">★</span></div>
+          <textarea id="adm_g1" class="textarea-input" placeholder="의견을 자유롭게 입력해 주세요..." style="min-height:80px;"></textarea>
+        </div></div>
+
+        <div id="adm_errMsg" style="color:#d32f2f;font-size:13px;margin-bottom:12px;display:none;"></div>
+        <div style="display:flex;gap:10px;margin-bottom:40px;">
+          <button class="submit-btn" id="admSubmitBtn" onclick="submitAdminResponse()" style="padding:12px 32px;font-size:14px;">응답 저장</button>
+          <button onclick="resetAdminForm()" style="padding:12px 20px;border-radius:10px;font-size:14px;background:#f0f2f7;color:#555;border:1px solid #dde;cursor:pointer;font-family:inherit;font-weight:600;">초기화</button>
+        </div>
+
+      </div>
     </div>
   </div>
 </div>
@@ -900,8 +1119,9 @@ function switchTab(tabId) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
   document.getElementById(tabId).classList.add('active');
-  const idx = tabId === 'tabList' ? 0 : 1;
-  document.querySelectorAll('.admin-tab')[idx].classList.add('active');
+  const idx = ['tabList','tabAnalysis','tabAddResponse'].indexOf(tabId);
+  const tabs = document.querySelectorAll('.admin-tab');
+  if (idx >= 0 && tabs[idx]) tabs[idx].classList.add('active');
   if (tabId === 'tabAnalysis') renderAnalysis();
 }
 
@@ -1376,6 +1596,119 @@ window.addEventListener('load', () => {
   const hasDraft = localStorage.getItem(DRAFT_KEY);
   if (hasDraft) restoreDraft();
 });
+
+/* ── 응답 추가 탭 ── */
+function admSelectScale(name, val) {
+  document.getElementById('adm_' + name + 'Scale').querySelectorAll('.scale-btn').forEach((b, i) => {
+    b.classList.toggle('selected', i + 1 === val);
+  });
+  document.getElementById('adm_' + name).value = val;
+}
+
+function admToggleE() {
+  const isYes = (document.querySelector('input[name="adm_e1"]:checked')?.value || '').startsWith('예');
+  const cond = document.getElementById('adm_e_cond');
+  cond.style.display = isYes ? 'flex' : 'none';
+  if (!isYes) document.querySelectorAll('input[name="adm_e2"], input[name="adm_e3"], input[name="adm_e4"]').forEach(el => el.checked = false);
+}
+
+function admGetRadio(name) {
+  return document.querySelector(`input[name="${name}"]:checked`)?.value || '';
+}
+
+function admGetCheckboxes(name) {
+  return Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(e => e.value).join(', ');
+}
+
+function resetAdminForm() {
+  ['adm_agencyName','adm_b2025','adm_b2026','adm_f2Count','adm_g1','adm_job_etc','adm_f3_etc'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  document.querySelectorAll('#tabAddResponse input[type=radio], #tabAddResponse input[type=checkbox]').forEach(el => el.checked = false);
+  document.getElementById('adm_b3').value = '';
+  document.getElementById('adm_c1').value = '';
+  document.querySelectorAll('#adm_b3Scale .scale-btn, #adm_c1Scale .scale-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('adm_e_cond').style.display = 'none';
+  document.getElementById('adm_job_etc').style.display = 'none';
+  document.getElementById('adm_f3_etc').style.display = 'none';
+  document.getElementById('adm_errMsg').style.display = 'none';
+}
+
+async function submitAdminResponse() {
+  const errEl = document.getElementById('adm_errMsg');
+  errEl.style.display = 'none';
+  const checks = [
+    [!document.getElementById('adm_agencyName').value.trim(), '대리점명을 입력해 주세요.'],
+    [!admGetRadio('adm_job'), '직무를 선택해 주세요.'],
+    [!document.getElementById('adm_b3').value, 'B-3 심각도를 선택해 주세요.'],
+    [!document.getElementById('adm_c1').value, 'C-1 영업 영향 심각도를 선택해 주세요.'],
+    [!admGetCheckboxes('adm_d1'), 'D-1 경쟁사 경험을 선택해 주세요.'],
+    [!admGetRadio('adm_e1'), 'E-1 CO 민원 여부를 선택해 주세요.'],
+    [!admGetRadio('adm_f1'), 'F-1 백라이트 인지 여부를 선택해 주세요.'],
+    [document.getElementById('adm_f2Count').value === '', 'F-2 민원 건수를 입력해 주세요.'],
+    [!admGetRadio('adm_f3'), 'F-3 희망 백라이트 시간을 선택해 주세요.'],
+    [!admGetRadio('adm_f4'), 'F-4 외출모드 오인 경험을 선택해 주세요.'],
+    [!admGetRadio('adm_f5'), 'F-5 외출모드 개선 필요성을 선택해 주세요.'],
+    [!document.getElementById('adm_g1').value.trim(), 'G-1 기타 의견을 입력해 주세요.'],
+  ];
+  const e1 = admGetRadio('adm_e1');
+  if (e1.startsWith('예')) {
+    checks.push([!admGetCheckboxes('adm_e2'), 'E-2 민원 발생 시점을 선택해 주세요.']);
+    checks.push([!admGetRadio('adm_e3'), 'E-3 배터리 사용 기간을 선택해 주세요.']);
+    checks.push([!admGetCheckboxes('adm_e4'), 'E-4 CO 경보기 제조업체를 선택해 주세요.']);
+  }
+  const fail = checks.find(([cond]) => cond);
+  if (fail) { errEl.textContent = fail[1]; errEl.style.display = 'block'; errEl.scrollIntoView({ behavior:'smooth', block:'center' }); return; }
+
+  const job = admGetRadio('adm_job');
+  const jobVal = job === '기타' ? ('기타: ' + (document.getElementById('adm_job_etc').value.trim() || '기타')) : job;
+  const f3 = admGetRadio('adm_f3');
+  const f3val = f3 === '기타' ? ('기타: ' + (document.getElementById('adm_f3_etc').value.trim() || '기타')) : f3;
+
+  const data = {
+    제출일시: new Date().toLocaleString('ko-KR'),
+    'A-1_대리점명': document.getElementById('adm_agencyName').value.trim(),
+    'A-2_직무': jobVal,
+    'B-2_젖음경험_2025년(대)': document.getElementById('adm_b2025').value || '0',
+    'B-2_젖음경험_2026년(대)': document.getElementById('adm_b2026').value || '0',
+    'B-3_발견시점': admGetCheckboxes('adm_b3'),
+    'B-3_심각도(1-5)': document.getElementById('adm_b3').value,
+    'C-1_영업영향_심각도(1-5)': document.getElementById('adm_c1').value,
+    'C-2_발생문제': admGetCheckboxes('adm_c2'),
+    'D-1_경쟁사경험': admGetCheckboxes('adm_d1'),
+    'D-2_경동나비엔비교': admGetRadio('adm_d2_경동나비엔'),
+    'D-2_귀뚜라미비교': admGetRadio('adm_d2_귀뚜라미'),
+    'D-2_린나이비교': admGetRadio('adm_d2_린나이'),
+    'E-1_CO민원경험': e1,
+    'E-2_민원발생시점': e1.startsWith('예') ? admGetCheckboxes('adm_e2') : '',
+    'E-3_배터리사용기간': e1.startsWith('예') ? admGetRadio('adm_e3') : '',
+    'E-4_CO경보기제조사': e1.startsWith('예') ? admGetCheckboxes('adm_e4') : '',
+    'F-1_백라이트기능인지': admGetRadio('adm_f1'),
+    'F-2_백라이트민원건수': document.getElementById('adm_f2Count').value || '0',
+    'F-3_희망백라이트시간': f3val,
+    'F-4_외출모드오인경험': admGetRadio('adm_f4'),
+    'F-5_외출모드개선필요성': admGetRadio('adm_f5'),
+    'G-1_기타의견': document.getElementById('adm_g1').value.trim()
+  };
+
+  const btn = document.getElementById('admSubmitBtn');
+  btn.disabled = true; btn.textContent = '저장 중...';
+  const ok = await saveToStorage(data);
+  btn.disabled = false; btn.textContent = '응답 저장';
+  if (ok) {
+    alert('응답이 저장되었습니다.');
+    resetAdminForm();
+    await renderAdminStats();
+    switchTab('tabList');
+  } else {
+    errEl.textContent = '저장 중 오류가 발생했습니다.'; errEl.style.display = 'block';
+  }
+}
+
+document.querySelectorAll('input[name="adm_job"]').forEach(el => el.addEventListener('change', function() {
+  document.getElementById('adm_job_etc').style.display = this.value === '기타' ? 'block' : 'none';
+}));
+document.querySelectorAll('input[name="adm_f3"]').forEach(el => el.addEventListener('change', function() {
+  document.getElementById('adm_f3_etc').style.display = this.value === '기타' ? 'block' : 'none';
+}));
 </script>
 </body>
 </html>
