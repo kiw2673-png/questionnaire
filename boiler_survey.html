@@ -1917,7 +1917,36 @@ async function renderReport() {
     )}
     ${section('E','CO 경보기 배터리',
       qBlock('E-1','CO 경보기 배터리 소진 민원 접수 여부', radioBar('E-1_CO민원경험')) +
-      qBlock('E-2','민원 발생 시점', checkboxBar('E-2_민원발생시점')) +
+      qBlock('E-2','민원 발생 시점', (() => {
+        const PAST   = ['3년 이전 발생 / 현재 없음','2~3년 전 발생 / 현재 없음','1~2년 전 발생 / 현재 없음'];
+        const RECENT = ['6개월~1년 전부터 현재까지 지속','6개월 이내 발생 / 현재도 접수 중','최근 1개월 이내 새로 발생'];
+        const counts = {};
+        let answered = 0;
+        all.forEach(r => {
+          const v = r['E-2_민원발생시점'];
+          if (v && v.trim()) { answered++; v.split(', ').map(s=>s.trim()).filter(Boolean).forEach(s => { counts[s]=(counts[s]||0)+1; }); }
+        });
+        if (answered === 0) return '<div class="q-total">응답 없음</div>';
+        function barRows(keys) {
+          return keys.map((label, i) => {
+            const cnt = counts[label] || 0;
+            const p = pctOf(cnt, answered);
+            const cls = i===0?'':i===1?'accent':'green';
+            return `<div class="q-bar-row"><div class="q-bar-label" title="${label}">${label.length>32?label.slice(0,31)+'…':label}</div><div class="q-bar-wrap"><div class="q-bar-fill ${cls}" style="width:${p}%"></div></div><div class="q-bar-stats">${cnt}건 (${p}%)</div></div>`;
+          }).join('');
+        }
+        const pastTotal   = PAST.reduce((s,k)=>s+(counts[k]||0),0);
+        const recentTotal = RECENT.reduce((s,k)=>s+(counts[k]||0),0);
+        return `<div style="margin-bottom:10px;">
+          <div style="font-size:12px;font-weight:700;color:#92400e;background:#fff7ed;border-left:3px solid #f59e0b;padding:4px 10px;border-radius:4px;margin-bottom:6px;">▸ 과거 민원 (현재는 없음) — ${pastTotal}건</div>
+          ${barRows(PAST)}
+        </div>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:#1e3a8a;background:#eff6ff;border-left:3px solid #3b82f6;padding:4px 10px;border-radius:4px;margin-bottom:6px;">▸ 최근 민원 (현재 진행 중) — ${recentTotal}건</div>
+          ${barRows(RECENT)}
+        </div>
+        <div class="q-total">응답 ${answered}건 / 전체 ${total}건</div>`;
+      })()) +
       qBlock('E-3','고객 체감 배터리 사용 기간', radioBar('E-3_배터리사용기간')) +
       qBlock('E-4','CO 경보기 제조업체', checkboxBar('E-4_CO경보기제조사'))
     )}
