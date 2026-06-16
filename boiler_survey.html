@@ -663,6 +663,20 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD G
   </div>
 </div>
 
+<!-- 데이터 초기화 확인 모달 -->
+<div class="modal-overlay" id="clearConfirmModal">
+  <div class="modal-box">
+    <h2>🗑 데이터 초기화</h2>
+    <p>모든 응답 데이터가 영구 삭제됩니다.<br>계속하려면 관리자 비밀번호를 입력해 주세요.</p>
+    <input type="password" class="modal-input" id="clearPwInput" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')confirmClearData()" />
+    <div class="modal-pw-err" id="clearPwErr">비밀번호가 올바르지 않습니다.</div>
+    <div class="modal-btn-row">
+      <button class="modal-btn secondary" onclick="closeModal('clearConfirmModal')">취소</button>
+      <button class="modal-btn primary" style="background:#c0392b;" onclick="confirmClearData()">삭제</button>
+    </div>
+  </div>
+</div>
+
 <!-- 관리자 패널 (전체화면) -->
 <div class="admin-modal" id="adminModal">
   <div class="admin-header">
@@ -1293,8 +1307,22 @@ async function downloadExcel() {
   XLSX.writeFile(wb, '보일러품질설문_' + new Date().toISOString().slice(0,10) + '.xlsx');
 }
 
-async function clearData() {
-  if (!confirm('모든 응답 데이터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return;
+function clearData() {
+  document.getElementById('clearPwInput').value = '';
+  document.getElementById('clearPwErr').style.display = 'none';
+  document.getElementById('clearConfirmModal').classList.add('active');
+  setTimeout(() => document.getElementById('clearPwInput').focus(), 100);
+}
+
+async function confirmClearData() {
+  const val = document.getElementById('clearPwInput').value;
+  if (val !== getPassword()) {
+    document.getElementById('clearPwErr').style.display = 'block';
+    document.getElementById('clearPwInput').value = '';
+    document.getElementById('clearPwInput').focus();
+    return;
+  }
+  closeModal('clearConfirmModal');
   const clrBtn = document.querySelector('.clr-btn');
   clrBtn.textContent = '삭제 중...';
   clrBtn.disabled = true;
