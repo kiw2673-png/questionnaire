@@ -1534,6 +1534,49 @@ async function downloadExcel() {
   XLSX.writeFile(wb, '보일러품질설문_' + new Date().toISOString().slice(0,10) + '.xlsx');
 }
 
+async function downloadReportExcel() {
+  const btn = document.getElementById('rptDlBtn');
+  if (btn) { btn.textContent = '불러오는 중...'; btn.disabled = true; }
+  const all = await getFromStorage();
+  if (btn) { btn.textContent = '📥 보고서 엑셀 다운로드'; btn.disabled = false; }
+  if (all.length === 0) { alert('저장된 응답 데이터가 없습니다.'); return; }
+
+  const questions = [
+    { key: '제출일시',                      label: '제출 일시' },
+    { key: 'A-2_직무',                      label: 'A-2. 직무' },
+    { key: 'B-2_젖음경험_2025년(대)',        label: 'B-1. 2025년 박스 젖음 경험 대수' },
+    { key: 'B-2_젖음경험_2026년(대)',        label: 'B-1. 2026년 박스 젖음 경험 대수' },
+    { key: 'B-3_발견시점',                   label: 'B-2. 박스 젖음이 주로 발견되는 시점' },
+    { key: 'B-3_심각도(1-5)',               label: 'B-3. 박스 젖음 심각도 평가 (1~5점)' },
+    { key: 'C-1_영업영향_심각도(1-5)',       label: 'C-1. 영업 활동 영향 심각도 (1~5점)' },
+    { key: 'C-2_발생문제',                   label: 'C-2. 박스 젖음으로 인해 실제 발생한 문제' },
+    { key: 'D-1_경쟁사경험',                 label: 'D-1. 경쟁사 제품 취급 및 접촉 경험' },
+    { key: 'D-2_경동나비엔비교',             label: 'D-2. 경동나비엔 박스 젖음 비교' },
+    { key: 'D-2_귀뚜라미비교',               label: 'D-2. 귀뚜라미 박스 젖음 비교' },
+    { key: 'D-2_린나이비교',                 label: 'D-2. 린나이 박스 젖음 비교' },
+    { key: 'E-1_CO민원경험',                 label: 'E-1. CO 경보기 배터리 소진 민원 접수 여부' },
+    { key: 'E-2_민원발생시점',               label: 'E-2. 민원 발생 시점' },
+    { key: 'E-3_배터리사용기간',             label: 'E-3. 고객 체감 배터리 사용 기간' },
+    { key: 'E-4_CO경보기제조사',             label: 'E-4. CO 경보기 제조업체' },
+    { key: 'F-1_백라이트기능인지',           label: 'F-1. 백라이트 밝기 조절 기능 추가 인지 여부' },
+    { key: 'F-2_백라이트민원건수',           label: 'F-2. 백라이트 시간 관련 민원 건수' },
+    { key: 'F-3_희망백라이트시간',           label: 'F-3. 희망 백라이트 유지 시간' },
+    { key: 'F-4_외출모드오인경험',           label: 'F-4. 외출모드 난방 오인 경험' },
+    { key: 'F-5_외출모드개선필요성',         label: 'F-5. 외출모드 개선 필요성' },
+    { key: 'G-1_기타의견',                   label: 'G-1. 추가 의견 및 현장 경험' },
+  ];
+
+  const dealers = all.map(r => r['A-1_대리점명'] || '(이름없음)');
+  const headerRow = ['문항', '내용', ...dealers];
+  const dataRows = questions.map(q => [q.key, q.label, ...all.map(r => r[q.key] || '')]);
+
+  const ws = XLSX.utils.aoa_to_sheet([headerRow, ...dataRows]);
+  ws['!cols'] = [{ wch: 28 }, { wch: 42 }, ...dealers.map(() => ({ wch: 22 }))];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '결과보고서');
+  XLSX.writeFile(wb, '보일러품질설문_보고서_' + new Date().toISOString().slice(0,10) + '.xlsx');
+}
+
 function clearData() {
   document.getElementById('clearPwInput').value = '';
   document.getElementById('clearPwErr').style.display = 'none';
@@ -1688,6 +1731,9 @@ async function renderReport() {
   }
 
   wrap.innerHTML = `
+    <div style="text-align:right;margin-bottom:12px;">
+      <button id="rptDlBtn" onclick="downloadReportExcel()" style="background:#1a3a6b;color:white;border:none;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">📥 보고서 엑셀 다운로드</button>
+    </div>
     <div style="background:#1a3a6b;border-radius:10px;padding:18px 20px;margin-bottom:20px;color:white;">
       <div style="font-size:15px;font-weight:600;margin-bottom:10px;">📋 현장 품질 설문 결과 보고서</div>
       <div style="display:flex;gap:28px;flex-wrap:wrap;">
@@ -1850,4 +1896,5 @@ document.querySelectorAll('input[name="adm_f3"]').forEach(el => el.addEventListe
 </script>
 </body>
 </html>
+
 
