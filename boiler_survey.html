@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>품질 현황 파악을 위한 현장 설문 조사</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -172,6 +173,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD G
 .resp-table td.long { max-width: 260px; }
 .del-row-btn { background: #fff0f0; color: #c0392b; border: 1px solid #fcc; padding: 3px 9px; border-radius: 5px; font-size: 11px; cursor: pointer; font-family: inherit; }
 .empty-msg { text-align: center; padding: 48px 20px; color: #aaa; font-size: 14px; }
+
+/* ── 피벗 테이블 ── */
+.pivot-label-col { min-width: 160px; max-width: 200px; position: sticky; left: 0; z-index: 2; font-weight: 600; color: #1a3a6b; white-space: normal; word-break: keep-all; background: #f0f4ff !important; }
+.resp-table thead th.pivot-label-col { background: #0f2550 !important; color: white; z-index: 3; }
+.pivot-dealer-col { min-width: 120px; max-width: 200px; white-space: normal; word-break: break-all; vertical-align: top; }
+
+/* ── 인쇄 ── */
+@media print {
+  .no-print { display: none !important; }
+}
 
 /* ── 관리자 탭 ── */
 .admin-tabs { display: flex; gap: 0; border-bottom: 2px solid #e0e6f5; margin-bottom: 20px; }
@@ -1295,22 +1306,28 @@ async function renderTable() {
     return;
   }
 
-  let html = '<table class="resp-table"><thead><tr><th>#</th>';
-  COL_LABELS.forEach(([,label]) => { html += `<th>${label}</th>`; });
-  html += '<th>삭제</th></tr></thead><tbody>';
+  // 피벗: 대리점명 → 열 헤더, 문항 → 행 헤더
+  const rowCols = COL_LABELS.filter(([key]) => key !== 'A-1_대리점명');
 
-  filtered.forEach((row, num) => {
+  let html = '<table class="resp-table"><thead><tr>';
+  html += '<th class="pivot-label-col">문항</th>';
+  filtered.forEach(row => {
+    const dealer = row['A-1_대리점명'] || '(미입력)';
     const docId = row._docId || '';
-    html += `<tr>`;
-    html += `<td>${num + 1}</td>`;
-    COL_LABELS.forEach(([key]) => {
-      const v = row[key] || '-';
-      const cls = key === 'G-1_기타의견' ? 'long' : '';
-      html += `<td class="${cls}" title="${String(v).replace(/"/g,"'")}">${v}</td>`;
-    });
-    html += `<td><button class="del-row-btn" onclick="deleteRow('${docId}')">삭제</button></td>`;
-    html += `</tr>`;
+    html += `<th class="pivot-dealer-col">${dealer}<br><button class="del-row-btn" onclick="deleteRow('${docId}')" style="margin-top:5px;">삭제</button></th>`;
   });
+  html += '</tr></thead><tbody>';
+
+  rowCols.forEach(([key, label], i) => {
+    html += `<tr><td class="pivot-label-col">${label}</td>`;
+    filtered.forEach(row => {
+      const v = row[key] || '-';
+      const display = String(v).length > 60 ? String(v).slice(0, 59) + '…' : String(v);
+      html += `<td class="pivot-dealer-col" title="${String(v).replace(/"/g, "'")}">${display}</td>`;
+    });
+    html += '</tr>';
+  });
+
   html += '</tbody></table>';
   document.getElementById('tableWrap').innerHTML = html;
 }
@@ -1577,6 +1594,142 @@ async function downloadReportExcel() {
   XLSX.writeFile(wb, '보일러품질설문_보고서_' + new Date().toISOString().slice(0,10) + '.xlsx');
 }
 
+function printReport() {
+  const content = document.getElementById('reportWrap').innerHTML;
+  let styleText = '';
+  document.querySelectorAll('style').forEach(s => { styleText += s.innerHTML; });
+  const win = window.open('', '_blank', 'width=900,height=700');
+  win.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>현장 품질 설문 결과 보고서</title><style>${styleText} body{padding:24px;font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;} .no-print{display:none!important;} @media print{.no-print{display:none!important;}}</style></head><body>${content}</body></html>`);
+  win.document.close();
+  win.focus();
+  setTimeout(() => { win.print(); }, 600);
+}
+
+async function downloadPPT() {
+  const btn = document.getElementById('pptDlBtn');
+  if (btn) { btn.textContent = '생성 중...'; btn.disabled = true; }
+  const all = await getFromStorage();
+  if (btn) { btn.textContent = '📊 PPT'; btn.disabled = false; }
+  if (all.length === 0) { alert('저장된 응답 데이터가 없습니다.'); return; }
+
+  const pres = new PptxGenJS();
+  pres.layout = 'LAYOUT_WIDE';
+  const NAVY = '1a3a6b', WHITE = 'FFFFFF', LIGHT = 'f0f4ff', GRAY = '555555';
+  const total = all.length;
+
+  function countKey(key) {
+    const counts = {};
+    all.forEach(r => {
+      (r[key] || '').split(', ').map(v => v.trim()).filter(Boolean).forEach(v => { counts[v] = (counts[v]||0)+1; });
+    });
+    return Object.entries(counts).sort((a,b) => b[1]-a[1]);
+  }
+  function avgStat(key) {
+    const vals = all.map(r => parseFloat(r[key])).filter(v => !isNaN(v) && v >= 0);
+    if (!vals.length) return null;
+    const sum = vals.reduce((s,v)=>s+v,0);
+    return { avg: (sum/vals.length).toFixed(1), sum, n: vals.length };
+  }
+  function pct(n, base) { return base > 0 ? Math.round(n/base*100) : 0; }
+
+  function titleSlide() {
+    const s = pres.addSlide();
+    s.background = { color: NAVY };
+    s.addText('현장 품질 설문 결과 보고서', { x: 0.5, y: 2.4, w: 12.3, h: 1.1, fontSize: 30, bold: true, color: WHITE, align: 'center' });
+    s.addText(`총 응답 ${total}건  •  ${new Date().toLocaleDateString('ko-KR')} 기준`, { x: 0.5, y: 3.7, w: 12.3, h: 0.6, fontSize: 15, color: 'aabbdd', align: 'center' });
+  }
+
+  function sectionSlide(badge, title, rows) {
+    const s = pres.addSlide();
+    s.addText(`${badge}  ${title}`, { x: 0, y: 0, w: 13.33, h: 0.85, fontSize: 17, bold: true, color: WHITE, fill: { color: NAVY }, valign: 'middle', margin: [0,0,0,18] });
+    if (!rows.length) { s.addText('데이터 없음', { x: 0.5, y: 1.2, w: 12.3, h: 0.5, fontSize: 13, color: GRAY }); return; }
+    const tableRows = rows.map(([label, val], i) => [
+      { text: label, options: { fontSize: 11, bold: true, color: '1a1a2e', fill: { color: i%2===0 ? 'f8f9fd' : LIGHT }, margin: [5,8,5,8] } },
+      { text: String(val), options: { fontSize: 11, color: NAVY, fill: { color: i%2===0 ? 'f8f9fd' : LIGHT }, margin: [5,8,5,8] } }
+    ]);
+    s.addTable(tableRows, { x: 0.4, y: 1.05, w: 12.5, colW: [6.0, 6.5], border: { pt: 0.5, color: 'e0e5f0' }, autoPage: true, autoPageLineWeight: 0.5 });
+  }
+
+  // 슬라이드 1: 타이틀
+  titleSlide();
+
+  // 슬라이드 2: A 기본정보
+  const dealers = all.map(r => r['A-1_대리점명']).filter(Boolean);
+  const jobs = countKey('A-2_직무');
+  sectionSlide('A', '기본 정보', [
+    ['총 응답 수', `${total}건`],
+    ['참여 대리점 (A-1)', dealers.join(' / ')],
+    ...jobs.map(([v,cnt]) => [`직무: ${v}`, `${cnt}명 (${pct(cnt,total)}%)`])
+  ]);
+
+  // 슬라이드 3: B 박스 젖음
+  const b25 = avgStat('B-2_젖음경험_2025년(대)');
+  const b26 = avgStat('B-2_젖음경험_2026년(대)');
+  const bScore = avgStat('B-3_심각도(1-5)');
+  const bTime = countKey('B-3_발견시점');
+  sectionSlide('B', '박스 젖음 현상', [
+    ['2025년 박스 젖음 경험 (평균)', b25 ? `${b25.avg}대 / 합계 ${b25.sum}대 (${b25.n}명 응답)` : '응답 없음'],
+    ['2026년 박스 젖음 경험 (평균)', b26 ? `${b26.avg}대 / 합계 ${b26.sum}대 (${b26.n}명 응답)` : '응답 없음'],
+    ['심각도 평가 (1~5점 평균)', bScore ? `${bScore.avg}점` : '응답 없음'],
+    ...bTime.slice(0,4).map(([v,cnt]) => [`발견시점: ${v}`, `${cnt}건 (${pct(cnt,total)}%)`])
+  ]);
+
+  // 슬라이드 4: C 영업 영향
+  const cScore = avgStat('C-1_영업영향_심각도(1-5)');
+  const cProb = countKey('C-2_발생문제');
+  sectionSlide('C', '영업 및 업무 영향도', [
+    ['영업 활동 영향 심각도 (평균)', cScore ? `${cScore.avg}점 / 5점` : '응답 없음'],
+    ...cProb.slice(0,6).map(([v,cnt]) => [`발생문제: ${v}`, `${cnt}건 (${pct(cnt,total)}%)`])
+  ]);
+
+  // 슬라이드 5: D 경쟁사
+  const d1 = countKey('D-1_경쟁사경험');
+  const dn = countKey('D-2_경동나비엔비교');
+  const dk = countKey('D-2_귀뚜라미비교');
+  const dl = countKey('D-2_린나이비교');
+  sectionSlide('D', '경쟁사 제품 비교', [
+    ...d1.slice(0,3).map(([v,cnt]) => [`경쟁사 경험: ${v}`, `${cnt}건 (${pct(cnt,total)}%)`]),
+    ...dn.slice(0,2).map(([v,cnt]) => [`경동나비엔 비교: ${v}`, `${cnt}건 (${pct(cnt,total)}%)`]),
+    ...dk.slice(0,2).map(([v,cnt]) => [`귀뚜라미 비교: ${v}`, `${cnt}건 (${pct(cnt,total)}%)`]),
+    ...dl.slice(0,2).map(([v,cnt]) => [`린나이 비교: ${v}`, `${cnt}건 (${pct(cnt,total)}%)`])
+  ]);
+
+  // 슬라이드 6: E CO경보기
+  const e1 = countKey('E-1_CO민원경험');
+  const e2 = countKey('E-2_민원발생시점');
+  const e3 = countKey('E-3_배터리사용기간');
+  const e4 = countKey('E-4_CO경보기제조사');
+  sectionSlide('E', 'CO 경보기 배터리', [
+    ...e1.map(([v,cnt]) => [`CO 민원 접수: ${v}`, `${cnt}건 (${pct(cnt,total)}%)`]),
+    ...e2.slice(0,2).map(([v,cnt]) => [`민원발생시점: ${v}`, `${cnt}건`]),
+    ...e3.slice(0,2).map(([v,cnt]) => [`배터리 사용기간: ${v}`, `${cnt}건 (${pct(cnt,total)}%)`]),
+    ...e4.slice(0,3).map(([v,cnt]) => [`CO경보기 제조사: ${v}`, `${cnt}건`])
+  ]);
+
+  // 슬라이드 7: F 조절기
+  const f1 = countKey('F-1_백라이트기능인지');
+  const f2 = avgStat('F-2_백라이트민원건수');
+  const f3 = countKey('F-3_희망백라이트시간');
+  const f4 = countKey('F-4_외출모드오인경험');
+  const f5 = countKey('F-5_외출모드개선필요성');
+  sectionSlide('F', 'DCR-81 / DCR-21B 조절기', [
+    ...f1.slice(0,2).map(([v,cnt]) => [`백라이트기능 인지: ${v}`, `${cnt}건 (${pct(cnt,total)}%)`]),
+    ['백라이트 민원건수 (평균)', f2 ? `${f2.avg}건 / 합계 ${f2.sum}건` : '응답 없음'],
+    ...f3.slice(0,2).map(([v,cnt]) => [`희망 백라이트 시간: ${v}`, `${cnt}건 (${pct(cnt,total)}%)`]),
+    ...f4.slice(0,2).map(([v,cnt]) => [`외출모드 오인경험: ${v}`, `${cnt}건 (${pct(cnt,total)}%)`]),
+    ...f5.slice(0,2).map(([v,cnt]) => [`외출모드 개선필요성: ${v}`, `${cnt}건 (${pct(cnt,total)}%)`])
+  ]);
+
+  // 슬라이드 8: G 기타의견
+  const opinions = all.map(r => r['G-1_기타의견']).filter(v => v && v.trim());
+  sectionSlide('G', '기타 의견', opinions.length
+    ? opinions.map((v, i) => [`의견 ${i+1}`, v.length > 90 ? v.slice(0,89)+'…' : v])
+    : [['기타 의견', '제출된 의견 없음']]
+  );
+
+  await pres.writeFile({ fileName: `보일러품질설문_보고서_${new Date().toISOString().slice(0,10)}.pptx` });
+}
+
 function clearData() {
   document.getElementById('clearPwInput').value = '';
   document.getElementById('clearPwErr').style.display = 'none';
@@ -1731,8 +1884,10 @@ async function renderReport() {
   }
 
   wrap.innerHTML = `
-    <div style="text-align:right;margin-bottom:12px;">
-      <button id="rptDlBtn" onclick="downloadReportExcel()" style="background:#1a3a6b;color:white;border:none;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">📥 보고서 엑셀 다운로드</button>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:12px;" class="no-print">
+      <button id="rptDlBtn" onclick="downloadReportExcel()" style="background:#1a7a4e;color:white;border:none;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">📥 엑셀</button>
+      <button onclick="printReport()" style="background:#374151;color:white;border:none;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">🖨 인쇄</button>
+      <button id="pptDlBtn" onclick="downloadPPT()" style="background:#c05621;color:white;border:none;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">📊 PPT</button>
     </div>
     <div style="background:#1a3a6b;border-radius:10px;padding:18px 20px;margin-bottom:20px;color:white;">
       <div style="font-size:15px;font-weight:600;margin-bottom:10px;">📋 현장 품질 설문 결과 보고서</div>
