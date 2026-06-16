@@ -1306,26 +1306,24 @@ async function renderTable() {
     return;
   }
 
-  // 피벗: 대리점명 → 열 헤더, 문항 → 행 헤더
-  const rowCols = COL_LABELS.filter(([key]) => key !== 'A-1_대리점명');
+  // 대리점명 → 행 헤더(첫 열 고정), 문항 → 열 헤더
+  const colCols = COL_LABELS.filter(([key]) => key !== 'A-1_대리점명');
 
   let html = '<table class="resp-table"><thead><tr>';
-  html += '<th class="pivot-label-col">문항</th>';
+  html += '<th class="pivot-label-col">대리점명</th>';
+  colCols.forEach(([, label]) => { html += `<th>${label}</th>`; });
+  html += '<th>삭제</th></tr></thead><tbody>';
+
   filtered.forEach(row => {
     const dealer = row['A-1_대리점명'] || '(미입력)';
     const docId = row._docId || '';
-    html += `<th class="pivot-dealer-col">${dealer}<br><button class="del-row-btn" onclick="deleteRow('${docId}')" style="margin-top:5px;">삭제</button></th>`;
-  });
-  html += '</tr></thead><tbody>';
-
-  rowCols.forEach(([key, label], i) => {
-    html += `<tr><td class="pivot-label-col">${label}</td>`;
-    filtered.forEach(row => {
+    html += `<tr><td class="pivot-label-col">${dealer}</td>`;
+    colCols.forEach(([key]) => {
       const v = row[key] || '-';
-      const display = String(v).length > 60 ? String(v).slice(0, 59) + '…' : String(v);
-      html += `<td class="pivot-dealer-col" title="${String(v).replace(/"/g, "'")}">${display}</td>`;
+      const display = String(v).length > 50 ? String(v).slice(0, 49) + '…' : String(v);
+      html += `<td title="${String(v).replace(/"/g, "'")}">${display}</td>`;
     });
-    html += '</tr>';
+    html += `<td><button class="del-row-btn" onclick="deleteRow('${docId}')">삭제</button></td></tr>`;
   });
 
   html += '</tbody></table>';
