@@ -689,7 +689,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD G
     <!-- 탭 -->
     <div class="admin-tabs">
       <button class="admin-tab active" onclick="switchTab('tabList')">📄 응답 목록</button>
-      <button class="admin-tab" onclick="switchTab('tabAnalysis')">📊 질문항목별 확인</button>
+      <button class="admin-tab" onclick="switchTab('tabReport')">📋 결과 보고서</button>
+      <button class="admin-tab" onclick="switchTab('tabAnalysis')">📊 항목별 확인</button>
       <button class="admin-tab" onclick="switchTab('tabAddResponse')">➕ 응답 추가</button>
     </div>
 
@@ -704,7 +705,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD G
       <div class="resp-table-wrap" id="tableWrap"></div>
     </div>
 
-    <!-- 탭2: 질문항목별 분석 -->
+    <!-- 탭2: 결과 보고서 -->
+    <div class="tab-panel" id="tabReport">
+      <div id="reportWrap"></div>
+    </div>
+
+    <!-- 탭3: 질문항목별 분석 -->
     <div class="tab-panel" id="tabAnalysis">
       <div id="analysisWrap"></div>
     </div>
@@ -1119,10 +1125,11 @@ function switchTab(tabId) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
   document.getElementById(tabId).classList.add('active');
-  const idx = ['tabList','tabAnalysis','tabAddResponse'].indexOf(tabId);
+  const idx = ['tabList','tabReport','tabAnalysis','tabAddResponse'].indexOf(tabId);
   const tabs = document.querySelectorAll('.admin-tab');
   if (idx >= 0 && tabs[idx]) tabs[idx].classList.add('active');
   if (tabId === 'tabAnalysis') renderAnalysis();
+  if (tabId === 'tabReport') renderReport();
 }
 
 async function renderAnalysis() {
@@ -1596,6 +1603,137 @@ window.addEventListener('load', () => {
   const hasDraft = localStorage.getItem(DRAFT_KEY);
   if (hasDraft) restoreDraft();
 });
+
+/* ── 결과 보고서 ── */
+async function renderReport() {
+  const wrap = document.getElementById('reportWrap');
+  wrap.innerHTML = '<div class="empty-msg">보고서를 생성하는 중...</div>';
+  const all = await getFromStorage();
+  const total = all.length;
+  if (total === 0) { wrap.innerHTML = '<div class="empty-msg">저장된 응답이 없습니다.</div>'; return; }
+
+  function pctOf(n, base) { return base > 0 ? Math.round(n / base * 100) : 0; }
+
+  function radioBar(key) {
+    const counts = {};
+    all.forEach(r => { const v = r[key]; if (v && v.trim()) counts[v] = (counts[v]||0)+1; });
+    const answered = Object.values(counts).reduce((s,v)=>s+v,0);
+    if (answered === 0) return '<div class="q-total">응답 없음</div>';
+    return Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([label,cnt],i) => {
+      const p = pctOf(cnt, answered);
+      const cls = i===0?'':i===1?'accent':'green';
+      return `<div class="q-bar-row"><div class="q-bar-label" title="${label}">${label.length>30?label.slice(0,29)+'…':label}</div><div class="q-bar-wrap"><div class="q-bar-fill ${cls}" style="width:${p}%"></div></div><div class="q-bar-stats">${cnt}건 (${p}%)</div></div>`;
+    }).join('') + `<div class="q-total">응답 ${answered}건 / 전체 ${total}건</div>`;
+  }
+
+  function checkboxBar(key) {
+    const counts = {};
+    let answered = 0;
+    all.forEach(r => { const v = r[key]; if (v && v.trim()) { answered++; v.split(', ').forEach(s => { const t=s.trim(); if(t) counts[t]=(counts[t]||0)+1; }); } });
+    if (answered === 0) return '<div class="q-total">응답 없음</div>';
+    return Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([label,cnt],i) => {
+      const p = pctOf(cnt, answered);
+      const cls = i===0?'':i===1?'accent':'green';
+      return `<div class="q-bar-row"><div class="q-bar-label" title="${label}">${label.length>30?label.slice(0,29)+'…':label}</div><div class="q-bar-wrap"><div class="q-bar-fill ${cls}" style="width:${p}%"></div></div><div class="q-bar-stats">${cnt}건 (${p}%)</div></div>`;
+    }).join('') + `<div class="q-total">응답 ${answered}건 / 전체 ${total}건</div>`;
+  }
+
+  function scaleBar(key) {
+    const counts = {1:0,2:0,3:0,4:0,5:0};
+    let sum = 0, answered = 0;
+    all.forEach(r => { const v = parseInt(r[key]); if (v>=1&&v<=5) { counts[v]++; sum+=v; answered++; } });
+    if (answered === 0) return '<div class="q-total">응답 없음</div>';
+    const avg = (sum/answered).toFixed(1);
+    const bars = [1,2,3,4,5].map(i => {
+      const p = pctOf(counts[i], answered);
+      return `<div class="q-bar-row"><div class="q-bar-label">${i}점</div><div class="q-bar-wrap"><div class="q-bar-fill" style="width:${p}%"></div></div><div class="q-bar-stats">${counts[i]}건 (${p}%)</div></div>`;
+    }).join('');
+    return `<div style="font-size:18px;font-weight:700;color:#1a3a6b;margin-bottom:10px;">평균 ${avg}<span style="font-size:13px;font-weight:400;">점</span></div>${bars}<div class="q-total">응답 ${answered}건 / 전체 ${total}건</div>`;
+  }
+
+  function numericStat(key, unit) {
+    const vals = all.map(r => parseFloat(r[key])).filter(v => !isNaN(v) && v >= 0);
+    if (vals.length === 0) return '<div class="q-total">응답 없음</div>';
+    const sum = vals.reduce((s,v)=>s+v,0);
+    const avg = (sum/vals.length).toFixed(1);
+    const max = Math.max(...vals);
+    return `<div style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:8px;">
+      <div style="text-align:center;background:#f0f4ff;border-radius:8px;padding:10px 16px;"><div style="font-size:20px;font-weight:700;color:#1a3a6b;">${avg}<span style="font-size:12px;font-weight:400;">${unit}</span></div><div style="font-size:11px;color:#888;">평균</div></div>
+      <div style="text-align:center;background:#f0f4ff;border-radius:8px;padding:10px 16px;"><div style="font-size:20px;font-weight:700;color:#1a3a6b;">${sum}<span style="font-size:12px;font-weight:400;">${unit}</span></div><div style="font-size:11px;color:#888;">합계</div></div>
+      <div style="text-align:center;background:#f0f4ff;border-radius:8px;padding:10px 16px;"><div style="font-size:20px;font-weight:700;color:#1a3a6b;">${max}<span style="font-size:12px;font-weight:400;">${unit}</span></div><div style="font-size:11px;color:#888;">최대</div></div>
+    </div><div class="q-total">응답 ${vals.length}건 / 전체 ${total}건</div>`;
+  }
+
+  function textList(key) {
+    const vals = all.map(r => r[key]).filter(v => v && v.trim());
+    if (vals.length === 0) return '<div class="q-total">응답 없음</div>';
+    return vals.map((v,i) => `<div style="font-size:13px;color:#333;padding:7px 12px;background:#f8f9fd;border-radius:6px;margin-bottom:5px;border-left:3px solid #1a3a6b;"><span style="color:#1a3a6b;font-weight:600;margin-right:6px;">${i+1}.</span>${v}</div>`).join('')
+      + `<div class="q-total">총 ${vals.length}건</div>`;
+  }
+
+  function qBlock(num, question, bodyHtml) {
+    return `<div style="padding:14px 0;border-bottom:1px solid #f0f2f7;">
+      <div style="font-size:13.5px;font-weight:500;color:#1a1a2e;margin-bottom:12px;line-height:1.6;">
+        <span style="display:inline-block;background:#1a3a6b;color:white;font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px;margin-right:8px;vertical-align:middle;">${num}</span>${question}
+      </div>
+      <div>${bodyHtml}</div>
+    </div>`;
+  }
+
+  function section(letter, name, content) {
+    return `<div class="q-analysis-card" style="margin-bottom:16px;">
+      <div class="q-analysis-header"><span class="q-analysis-badge">${letter}</span><span class="q-analysis-title">${name}</span></div>
+      <div class="q-analysis-body">${content}</div>
+    </div>`;
+  }
+
+  wrap.innerHTML = `
+    <div style="background:#1a3a6b;border-radius:10px;padding:18px 20px;margin-bottom:20px;color:white;">
+      <div style="font-size:15px;font-weight:600;margin-bottom:10px;">📋 현장 품질 설문 결과 보고서</div>
+      <div style="display:flex;gap:28px;flex-wrap:wrap;">
+        <div><div style="font-size:11px;opacity:0.7;">총 응답</div><div style="font-size:28px;font-weight:700;">${total}<span style="font-size:14px;font-weight:400;">건</span></div></div>
+        <div><div style="font-size:11px;opacity:0.7;">최근 응답</div><div style="font-size:14px;font-weight:500;padding-top:6px;">${all[all.length-1]?.제출일시||'-'}</div></div>
+      </div>
+    </div>
+
+    ${section('A','기본 정보',
+      qBlock('A-1','대리점명', textList('A-1_대리점명')) +
+      qBlock('A-2','직무', radioBar('A-2_직무'))
+    )}
+    ${section('B','박스 젖음 현상',
+      qBlock('B-1','2025년 박스 젖음 경험 대수', numericStat('B-2_젖음경험_2025년(대)','대')) +
+      qBlock('B-1','2026년 박스 젖음 경험 대수', numericStat('B-2_젖음경험_2026년(대)','대')) +
+      qBlock('B-2','박스 젖음이 주로 발견되는 시점', checkboxBar('B-3_발견시점')) +
+      qBlock('B-3','박스 젖음 심각도 평가 (1~5점)', scaleBar('B-3_심각도(1-5)'))
+    )}
+    ${section('C','영업 및 업무 영향도',
+      qBlock('C-1','영업 활동 영향 심각도 (1~5점)', scaleBar('C-1_영업영향_심각도(1-5)')) +
+      qBlock('C-2','박스 젖음으로 인해 실제 발생한 문제', checkboxBar('C-2_발생문제'))
+    )}
+    ${section('D','경쟁사 제품 비교',
+      qBlock('D-1','경쟁사 제품 취급 및 접촉 경험', checkboxBar('D-1_경쟁사경험')) +
+      qBlock('D-2','경동나비엔 박스 젖음 비교', radioBar('D-2_경동나비엔비교')) +
+      qBlock('D-2','귀뚜라미 박스 젖음 비교', radioBar('D-2_귀뚜라미비교')) +
+      qBlock('D-2','린나이 박스 젖음 비교', radioBar('D-2_린나이비교'))
+    )}
+    ${section('E','CO 경보기 배터리',
+      qBlock('E-1','CO 경보기 배터리 소진 민원 접수 여부', radioBar('E-1_CO민원경험')) +
+      qBlock('E-2','민원 발생 시점', checkboxBar('E-2_민원발생시점')) +
+      qBlock('E-3','고객 체감 배터리 사용 기간', radioBar('E-3_배터리사용기간')) +
+      qBlock('E-4','CO 경보기 제조업체', checkboxBar('E-4_CO경보기제조사'))
+    )}
+    ${section('F','DCR-81 / DCR-21B 조절기',
+      qBlock('F-1','백라이트 밝기 조절 기능 추가 인지 여부', radioBar('F-1_백라이트기능인지')) +
+      qBlock('F-2','백라이트 시간 관련 민원 건수', numericStat('F-2_백라이트민원건수','건')) +
+      qBlock('F-3','희망 백라이트 유지 시간', radioBar('F-3_희망백라이트시간')) +
+      qBlock('F-4','외출모드 난방 오인 경험', radioBar('F-4_외출모드오인경험')) +
+      qBlock('F-5','외출모드 개선 필요성', radioBar('F-5_외출모드개선필요성'))
+    )}
+    ${section('G','기타 의견',
+      qBlock('G-1','추가 의견 및 현장 경험', textList('G-1_기타의견'))
+    )}
+  `;
+}
 
 /* ── 응답 추가 탭 ── */
 function admSelectScale(name, val) {
