@@ -262,7 +262,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD G
     <div class="section-header"><span class="section-badge">B</span><span class="section-title">박스 젖음 현상 경험</span></div>
     <div class="section-body">
       <div class="q-block">
-        <div class="q-label"><span class="q-num">B-1</span>최근 수령한 제품 중 박스가 젖어 있는 경우는 몇 대 정도 경험하셨습니까?</div>
+        <div class="q-label"><span class="q-num">B-1</span>최근 수령한 제품 중 박스가 젖어 있는 경우는 몇 대 정도 경험하셨습니까? <span class="required-star">★</span></div>
         <div style="padding-left:38px; display:flex; flex-direction:column; gap:12px;">
           <div style="display:flex; align-items:center; gap:12px;">
             <label style="font-size:14px; font-weight:600; color:#1a3a6b; min-width:60px;">2025년</label>
@@ -279,9 +279,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD G
             </div>
           </div>
         </div>
+        <div class="error-msg" id="err-b1">연도별 대수를 입력해 주세요.</div>
       </div>
       <div class="q-block">
-        <div class="q-label"><span class="q-num">B-2</span>박스 젖음이 주로 발견되는 시점은 언제입니까? <span style="font-size:12px;color:#888;">(복수 선택 가능)</span></div>
+        <div class="q-label"><span class="q-num">B-2</span>박스 젖음이 주로 발견되는 시점은 언제입니까? <span style="font-size:12px;color:#888;">(복수 선택 가능)</span> <span class="required-star">★</span></div>
         <div class="options-list">
           <label class="option-item checkbox-item"><input type="checkbox" name="b3" value="대리점 입고 시"> 대리점 입고 시</label>
           <label class="option-item checkbox-item"><input type="checkbox" name="b3" value="고객 납품/배송 완료 후"> 고객 납품 / 배송 완료 후</label>
@@ -292,6 +293,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD G
         <div id="b3-etc" style="display:none; padding-left:38px; margin-top:8px; margin-bottom:4px;">
           <input type="text" class="text-input" id="b3-etc-text" placeholder="기타 발견 시점을 입력해 주세요" />
         </div>
+        <div class="error-msg" id="err-b2">하나 이상 선택해 주세요.</div>
       </div>
       <div class="q-block">
         <div class="q-label"><span class="q-num">B-3</span>박스 젖음의 정도를 전반적으로 어떻게 평가하십니까? <span class="required-star">★</span></div>
@@ -333,7 +335,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD G
         <div class="error-msg" id="err-c1">평가 점수를 선택해 주세요.</div>
       </div>
       <div class="q-block">
-        <div class="q-label"><span class="q-num">C-2</span>박스 젖음으로 인해 실제로 발생한 문제는 무엇입니까? <span style="font-size:12px;color:#888;">(복수 선택 가능)</span></div>
+        <div class="q-label"><span class="q-num">C-2</span>박스 젖음으로 인해 실제로 발생한 문제는 무엇입니까? <span style="font-size:12px;color:#888;">(복수 선택 가능)</span> <span class="required-star">★</span></div>
         <div class="options-list">
           <label class="option-item checkbox-item"><input type="checkbox" name="c2" value="고객 불만 접수 / 클레임"> 고객 불만 접수 / 클레임</label>
           <label class="option-item checkbox-item"><input type="checkbox" name="c2" value="제품 교환 또는 반품 요청"> 제품 교환 또는 반품 요청</label>
@@ -346,6 +348,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD G
         <div id="c2-etc" style="display:none; padding-left:38px; margin-top:8px; margin-bottom:4px;">
           <input type="text" class="text-input" id="c2-etc-text" placeholder="기타 문제를 입력해 주세요" />
         </div>
+        <div class="error-msg" id="err-c2">하나 이상 선택해 주세요.</div>
       </div>
     </div>
   </div>
@@ -445,10 +448,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD G
             <label class="option-item checkbox-item"><input type="checkbox" name="e2" value="최근 1개월 이내 새로 발생"> 최근 1개월 이내 새로 발생</label>
           </div>
         </div>
+        <div class="error-msg" id="err-e2">하나 이상 선택해 주세요.</div>
       </div>
 
       <div class="q-block disabled" id="e3block">
-        <div class="q-label"><span class="q-num">E-3</span>고객이 체감한 배터리 사용 기간은 대략 어느 정도였습니까?</div>
+        <div class="q-label"><span class="q-num">E-3</span>고객이 체감한 배터리 사용 기간은 대략 어느 정도였습니까? <span class="required-star">★</span></div>
         <div class="options-list">
           <label class="option-item"><input type="radio" name="e3" value="1개월 미만"> 1개월 미만</label>
           <label class="option-item"><input type="radio" name="e3" value="1개월 이상 ~ 3개월 미만"> 1개월 이상 ~ 3개월 미만</label>
@@ -457,10 +461,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD G
           <label class="option-item"><input type="radio" name="e3" value="1년 이상"> 1년 이상</label>
           <label class="option-item"><input type="radio" name="e3" value="잘 모름 / 고객이 구체적 기간 미제공"> 잘 모름 / 고객이 구체적 기간 미제공</label>
         </div>
+        <div class="error-msg" id="err-e3">응답을 선택해 주세요.</div>
       </div>
 
       <div class="q-block disabled" id="e4block">
-        <div class="q-label"><span class="q-num">E-4</span>배터리 소진 민원이 접수된 CO 경보기의 제조 업체는 어디입니까? <span style="font-size:12px;color:#888;">(복수 선택 가능)</span></div>
+        <div class="q-label"><span class="q-num">E-4</span>배터리 소진 민원이 접수된 CO 경보기의 제조 업체는 어디입니까? <span style="font-size:12px;color:#888;">(복수 선택 가능)</span> <span class="required-star">★</span></div>
         <div class="options-list">
           <label class="option-item checkbox-item"><input type="checkbox" name="e4" value="수산홈텍"> 수산홈텍</label>
           <label class="option-item checkbox-item"><input type="checkbox" name="e4" value="아지스"> 아지스</label>
@@ -471,6 +476,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD G
         <div id="e4-etc" style="display:none; padding-left:38px; margin-top:8px; margin-bottom:4px;">
           <input type="text" class="text-input" id="e4-etc-text" placeholder="기타 제조업체를 입력해 주세요" />
         </div>
+        <div class="error-msg" id="err-e4">하나 이상 선택해 주세요.</div>
       </div>
     </div>
   </div>
@@ -509,11 +515,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD G
 
       <!-- F-2 백라이트 시간 민원 건수 -->
       <div class="q-block">
-        <div class="q-label"><span class="q-num">F-2</span>조절기 백라이트 시간과 관련한 고객 불만이나 민원을 접수하신 건은 몇 건 정도인가요?</div>
+        <div class="q-label"><span class="q-num">F-2</span>조절기 백라이트 시간과 관련한 고객 불만이나 민원을 접수하신 건은 몇 건 정도인가요? <span class="required-star">★</span></div>
         <div style="padding-left:38px; display:flex; align-items:center; gap:10px;">
           <input type="number" id="f2Count" min="0" class="text-input" style="width:120px; text-align:center;" placeholder="0" />
           <span style="font-size:15px; color:#555; font-weight:500;">건</span>
         </div>
+        <div class="error-msg" id="err-f2">건수를 입력해 주세요.</div>
       </div>
 
       <!-- F-3 백라이트 희망 시간 -->
@@ -601,10 +608,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD G
     <div class="section-header"><span class="section-badge">G</span><span class="section-title">기타 의견</span></div>
     <div class="section-body">
       <div class="q-block">
-        <div class="q-label"><span class="q-num">G-1</span>박스 젖음 현상, CO 경보기, 조절기 관련하여 추가로 전달하실 의견이나 현장 경험을 자유롭게 기재해 주세요.</div>
+        <div class="q-label"><span class="q-num">G-1</span>박스 젖음 현상, CO 경보기, 조절기 관련하여 추가로 전달하실 의견이나 현장 경험을 자유롭게 기재해 주세요. <span class="required-star">★</span></div>
         <div class="text-input-wrap">
           <textarea class="textarea-input" id="g1" placeholder="의견을 자유롭게 입력해 주세요..."></textarea>
         </div>
+        <div class="error-msg" id="err-g1">의견을 입력해 주세요.</div>
       </div>
     </div>
   </div>
@@ -1108,23 +1116,52 @@ function validateForm() {
   const job = getRadioValue('job');
   showError('job', !job); if (!job) valid = false;
 
+  const b1_2025 = document.getElementById('b2_2025').value;
+  const b1_2026 = document.getElementById('b2_2026').value;
+  const b1valid = b1_2025 !== '' && b1_2026 !== '';
+  showError('b1', !b1valid); if (!b1valid) valid = false;
+  const b2vals = getCheckboxValues('b3');
+  showError('b2', !b2vals); if (!b2vals) valid = false;
+
   const b4 = document.getElementById('b3').value;
   showError('b3', !b4); if (!b4) valid = false;
   const c1 = document.getElementById('c1').value;
   showError('c1', !c1); if (!c1) valid = false;
+  const c2vals = getCheckboxValues('c2');
+  showError('c2', !c2vals); if (!c2vals) valid = false;
   const d1 = getCheckboxValues('d1');
   showError('d1', !d1); if (!d1) valid = false;
+  const d2n = getRadioValue('d2_경동나비엔');
+  const d2g = getRadioValue('d2_귀뚜라미');
+  const d2l = getRadioValue('d2_린나이');
+  const d2valid = d2n && d2g && d2l;
+  showError('d2', !d2valid); if (!d2valid) valid = false;
   const e1 = getRadioValue('e1');
   showError('e1', !e1); if (!e1) valid = false;
+  if (e1.startsWith('예')) {
+    const e2vals = Array.from(document.querySelectorAll('input[name="e2"]:checked')).map(e=>e.value).join(', ');
+    showError('e2', !e2vals); if (!e2vals) valid = false;
+    const e3v = getRadioValue('e3');
+    showError('e3', !e3v); if (!e3v) valid = false;
+    const e4vals = getCheckboxValues('e4');
+    showError('e4', !e4vals); if (!e4vals) valid = false;
+  } else {
+    showError('e2', false);
+    showError('e3', false);
+    showError('e4', false);
+  }
   const f1v = getRadioValue('f1');
   showError('f1', !f1v); if (!f1v) valid = false;
-
+  const f2v = document.getElementById('f2Count').value;
+  showError('f2', f2v === ''); if (f2v === '') valid = false;
   const f3v = getRadioValue('f3');
   showError('f3', !f3v); if (!f3v) valid = false;
   const f4v = getRadioValue('f4');
   showError('f4', !f4v); if (!f4v) valid = false;
   const f5v = getRadioValue('f5');
   showError('f5', !f5v); if (!f5v) valid = false;
+  const g1v = document.getElementById('g1').value.trim();
+  showError('g1', !g1v); if (!g1v) valid = false;
   return valid;
 }
 
@@ -1314,3 +1351,4 @@ window.addEventListener('load', () => {
 </script>
 </body>
 </html>
+
