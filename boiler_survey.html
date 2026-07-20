@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>품질 현황 파악을 위한 현장 설문 조사</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -174,16 +173,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD G
 .del-row-btn { background: #fff0f0; color: #c0392b; border: 1px solid #fcc; padding: 3px 9px; border-radius: 5px; font-size: 11px; cursor: pointer; font-family: inherit; }
 .empty-msg { text-align: center; padding: 48px 20px; color: #aaa; font-size: 14px; }
 
-/* ── 피벗 테이블 ── */
-.pivot-label-col { min-width: 160px; max-width: 200px; position: sticky; left: 0; z-index: 2; font-weight: 600; color: #1a3a6b; white-space: normal; word-break: keep-all; background: #f0f4ff !important; }
-.resp-table thead th.pivot-label-col { background: #0f2550 !important; color: white; z-index: 3; }
-.pivot-dealer-col { min-width: 120px; max-width: 200px; white-space: normal; word-break: break-all; vertical-align: top; }
-
-/* ── 인쇄 ── */
-@media print {
-  .no-print { display: none !important; }
-}
-
 /* ── 관리자 탭 ── */
 .admin-tabs { display: flex; gap: 0; border-bottom: 2px solid #e0e6f5; margin-bottom: 20px; }
 .admin-tab { padding: 10px 22px; font-size: 13px; font-weight: 600; color: #888; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.15s; background: none; border-top: none; border-left: none; border-right: none; font-family: inherit; }
@@ -217,9 +206,139 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD G
 .success-box h2 { font-size: 18px; color: #1a3a6b; margin-bottom: 8px; }
 .success-box p { font-size: 14px; color: #666; line-height: 1.6; }
 .close-success { margin-top: 20px; background: #1a3a6b; color: white; border: none; padding: 10px 28px; border-radius: 8px; cursor: pointer; font-size: 14px; font-family: inherit; font-weight: 500; }
+
+/* ── 설문 통합 탭 시스템 ── */
+.hub-tab-bar {
+  background: #0f2550;
+  display: flex;
+  align-items: stretch;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 0 6px;
+  border-bottom: 2px solid rgba(255,255,255,0.1);
+}
+.hub-tab-bar::-webkit-scrollbar { display: none; }
+.hub-tab {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 18px;
+  height: 46px;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  color: rgba(255,255,255,0.6);
+  font-size: 13.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: all 0.18s;
+  flex-shrink: 0;
+  user-select: none;
+}
+.hub-tab:hover { color: white; background: rgba(255,255,255,0.08); }
+.hub-tab.active { color: white; border-bottom-color: #64b5f6; background: rgba(255,255,255,0.1); }
+.hub-badge {
+  background: rgba(255,255,255,0.22);
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 10px;
+  letter-spacing: 0.2px;
+}
+.hub-tab-close {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: transparent; border: none;
+  cursor: pointer; font-size: 12px;
+  color: rgba(255,255,255,0.4);
+  transition: all 0.15s; opacity: 0;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.hub-tab:hover .hub-tab-close { opacity: 1; }
+.hub-tab-close:hover { background: rgba(239,68,68,0.55); color: white; }
+.hub-tab-add {
+  display: flex; align-items: center;
+  padding: 0 14px; cursor: pointer;
+  color: rgba(255,255,255,0.45);
+  font-size: 22px; transition: color 0.18s; flex-shrink: 0;
+}
+.hub-tab-add:hover { color: white; }
+.hub-pane { display: none; }
+.hub-pane.active { display: block; }
+.hub-pane iframe { width: 100%; height: calc(100vh - 46px); border: none; display: block; }
+
+/* 설문 추가 모달 */
+.hub-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(15,23,42,0.6); z-index: 500;
+  align-items: center; justify-content: center;
+  backdrop-filter: blur(3px);
+}
+.hub-overlay.open { display: flex; }
+.hub-modal {
+  background: white; border-radius: 18px;
+  padding: 30px 28px 26px; width: 460px; max-width: 92vw;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.3);
+  animation: hubPop 0.2s ease;
+}
+@keyframes hubPop { from{transform:scale(0.94);opacity:0} to{transform:scale(1);opacity:1} }
+.hub-modal-title { font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+.hub-modal-sub { font-size: 13px; color: #64748b; margin-bottom: 22px; }
+.hub-field { margin-bottom: 14px; }
+.hub-field label { display: block; font-size: 12.5px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+.hub-field label span { color: #ef4444; }
+.hub-field input {
+  width: 100%; padding: 10px 13px;
+  border: 1.5px solid #e2e8f0; border-radius: 9px;
+  font-size: 13.5px; outline: none; font-family: inherit;
+  transition: border-color 0.18s;
+}
+.hub-field input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+.hub-field input.hub-err-border { border-color: #ef4444; }
+.hub-hint { font-size: 11.5px; color: #94a3b8; margin-top: 4px; }
+.hub-err-txt { font-size: 11.5px; color: #ef4444; margin-top: 4px; display: none; }
+.hub-err-txt.show { display: block; }
+.hub-modal-footer {
+  display: flex; gap: 10px; justify-content: flex-end;
+  margin-top: 22px; padding-top: 18px; border-top: 1px solid #f1f5f9;
+}
+.hub-btn-cancel {
+  background: #f1f5f9; color: #64748b; border: none;
+  padding: 10px 20px; border-radius: 8px; font-size: 13.5px;
+  font-weight: 500; cursor: pointer; font-family: inherit; transition: background 0.15s;
+}
+.hub-btn-cancel:hover { background: #e2e8f0; }
+.hub-btn-ok {
+  background: #1a3a6b; color: white; border: none;
+  padding: 10px 22px; border-radius: 8px; font-size: 13.5px;
+  font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.15s;
+}
+.hub-btn-ok:hover { background: #12285a; }
+.hub-toast {
+  position: fixed; bottom: 72px; right: 24px;
+  background: #0f172a; color: white;
+  padding: 11px 18px; border-radius: 10px;
+  font-size: 13px; opacity: 0; transform: translateY(8px);
+  transition: all 0.25s; z-index: 600; pointer-events: none;
+}
+.hub-toast.show { opacity: 1; transform: translateY(0); }
 </style>
 </head>
 <body>
+
+<!-- ── 설문 통합 탭 바 ── -->
+<div class="hub-tab-bar" id="hubTabBar">
+  <div class="hub-tab active" data-id="boiler" onclick="hubSwitch('boiler')">
+    <span>🔥</span>
+    <span>현장 품질 조사</span>
+    <span class="hub-badge">기본</span>
+  </div>
+  <div class="hub-tab-add" id="hubAddBtn" onclick="hubOpenModal()" title="설문지 추가">＋</div>
+</div>
+
+<!-- ── 현장 품질 조사 탭 패널 ── -->
+<div class="hub-pane active" id="hub-pane-boiler">
 
 <div class="header">
   <div class="header-inner">
@@ -644,6 +763,37 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD G
 
 <!-- 관리자 버튼 -->
 <button class="admin-toggle" onclick="openAdminLogin()">📊 관리자</button>
+
+</div><!-- /hub-pane-boiler -->
+
+<!-- ── 설문 추가 모달 ── -->
+<div class="hub-overlay" id="hubOverlay">
+  <div class="hub-modal">
+    <div class="hub-modal-title">📝 설문지 등록</div>
+    <div class="hub-modal-sub">새로운 설문지를 탭으로 추가합니다.</div>
+    <div class="hub-field">
+      <label>설문지 이름 <span>*</span></label>
+      <input type="text" id="hubFName" placeholder="예: 고객 만족도 조사" maxlength="30">
+      <div class="hub-err-txt" id="hubErrName">설문지 이름을 입력해주세요.</div>
+    </div>
+    <div class="hub-field">
+      <label>설문지 URL <span>*</span></label>
+      <input type="url" id="hubFUrl" placeholder="https://...">
+      <div class="hub-hint">설문지 페이지의 전체 URL을 입력하세요.</div>
+      <div class="hub-err-txt" id="hubErrUrl">올바른 URL 형식으로 입력해주세요.</div>
+    </div>
+    <div class="hub-field">
+      <label>아이콘 <span style="color:#94a3b8;font-weight:400">(선택)</span></label>
+      <input type="text" id="hubFIcon" placeholder="📊" maxlength="2">
+      <div class="hub-hint">이모지 1개 입력 · 기본값: 📋</div>
+    </div>
+    <div class="hub-modal-footer">
+      <button class="hub-btn-cancel" onclick="hubCloseModal()">취소</button>
+      <button class="hub-btn-ok" onclick="hubConfirmAdd()">등록하기</button>
+    </div>
+  </div>
+</div>
+<div class="hub-toast" id="hubToast"></div>
 
 <!-- 비밀번호 로그인 모달 -->
 <div class="modal-overlay" id="pwModal">
@@ -1306,26 +1456,22 @@ async function renderTable() {
     return;
   }
 
-  // 대리점명 → 행 헤더(첫 열 고정), 문항 → 열 헤더
-  const colCols = COL_LABELS.filter(([key]) => key !== 'A-1_대리점명');
-
-  let html = '<table class="resp-table"><thead><tr>';
-  html += '<th class="pivot-label-col">대리점명</th>';
-  colCols.forEach(([, label]) => { html += `<th>${label}</th>`; });
+  let html = '<table class="resp-table"><thead><tr><th>#</th>';
+  COL_LABELS.forEach(([,label]) => { html += `<th>${label}</th>`; });
   html += '<th>삭제</th></tr></thead><tbody>';
 
-  filtered.forEach(row => {
-    const dealer = row['A-1_대리점명'] || '(미입력)';
+  filtered.forEach((row, num) => {
     const docId = row._docId || '';
-    html += `<tr><td class="pivot-label-col">${dealer}</td>`;
-    colCols.forEach(([key]) => {
+    html += `<tr>`;
+    html += `<td>${num + 1}</td>`;
+    COL_LABELS.forEach(([key]) => {
       const v = row[key] || '-';
-      const display = String(v).length > 50 ? String(v).slice(0, 49) + '…' : String(v);
-      html += `<td title="${String(v).replace(/"/g, "'")}">${display}</td>`;
+      const cls = key === 'G-1_기타의견' ? 'long' : '';
+      html += `<td class="${cls}" title="${String(v).replace(/"/g,"'")}">${v}</td>`;
     });
-    html += `<td><button class="del-row-btn" onclick="deleteRow('${docId}')">삭제</button></td></tr>`;
+    html += `<td><button class="del-row-btn" onclick="deleteRow('${docId}')">삭제</button></td>`;
+    html += `</tr>`;
   });
-
   html += '</tbody></table>';
   document.getElementById('tableWrap').innerHTML = html;
 }
@@ -1549,185 +1695,6 @@ async function downloadExcel() {
   XLSX.writeFile(wb, '보일러품질설문_' + new Date().toISOString().slice(0,10) + '.xlsx');
 }
 
-async function downloadReportExcel() {
-  const btn = document.getElementById('rptDlBtn');
-  if (btn) { btn.textContent = '불러오는 중...'; btn.disabled = true; }
-  const all = await getFromStorage();
-  if (btn) { btn.textContent = '📥 보고서 엑셀 다운로드'; btn.disabled = false; }
-  if (all.length === 0) { alert('저장된 응답 데이터가 없습니다.'); return; }
-
-  const questions = [
-    { key: '제출일시',                      label: '제출 일시' },
-    { key: 'A-2_직무',                      label: 'A-2. 직무' },
-    { key: 'B-2_젖음경험_2025년(대)',        label: 'B-1. 2025년 박스 젖음 경험 대수' },
-    { key: 'B-2_젖음경험_2026년(대)',        label: 'B-1. 2026년 박스 젖음 경험 대수' },
-    { key: 'B-3_발견시점',                   label: 'B-2. 박스 젖음이 주로 발견되는 시점' },
-    { key: 'B-3_심각도(1-5)',               label: 'B-3. 박스 젖음 심각도 평가 (1~5점)' },
-    { key: 'C-1_영업영향_심각도(1-5)',       label: 'C-1. 영업 활동 영향 심각도 (1~5점)' },
-    { key: 'C-2_발생문제',                   label: 'C-2. 박스 젖음으로 인해 실제 발생한 문제' },
-    { key: 'D-1_경쟁사경험',                 label: 'D-1. 경쟁사 제품 취급 및 접촉 경험' },
-    { key: 'D-2_경동나비엔비교',             label: 'D-2. 경동나비엔 박스 젖음 비교' },
-    { key: 'D-2_귀뚜라미비교',               label: 'D-2. 귀뚜라미 박스 젖음 비교' },
-    { key: 'D-2_린나이비교',                 label: 'D-2. 린나이 박스 젖음 비교' },
-    { key: 'E-1_CO민원경험',                 label: 'E-1. CO 경보기 배터리 소진 민원 접수 여부' },
-    { key: 'E-2_민원발생시점',               label: 'E-2. 민원 발생 시점' },
-    { key: 'E-3_배터리사용기간',             label: 'E-3. 고객 체감 배터리 사용 기간' },
-    { key: 'E-4_CO경보기제조사',             label: 'E-4. CO 경보기 제조업체' },
-    { key: 'F-1_백라이트기능인지',           label: 'F-1. 백라이트 밝기 조절 기능 추가 인지 여부' },
-    { key: 'F-2_백라이트민원건수',           label: 'F-2. 백라이트 시간 관련 민원 건수' },
-    { key: 'F-3_희망백라이트시간',           label: 'F-3. 희망 백라이트 유지 시간' },
-    { key: 'F-4_외출모드오인경험',           label: 'F-4. 외출모드 난방 오인 경험' },
-    { key: 'F-5_외출모드개선필요성',         label: 'F-5. 외출모드 개선 필요성' },
-    { key: 'G-1_기타의견',                   label: 'G-1. 추가 의견 및 현장 경험' },
-  ];
-
-  const dealers = all.map(r => r['A-1_대리점명'] || '(이름없음)');
-  const headerRow = ['문항', '내용', ...dealers];
-  const dataRows = questions.map(q => [q.key, q.label, ...all.map(r => r[q.key] || '')]);
-
-  const ws = XLSX.utils.aoa_to_sheet([headerRow, ...dataRows]);
-  ws['!cols'] = [{ wch: 28 }, { wch: 42 }, ...dealers.map(() => ({ wch: 22 }))];
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, '결과보고서');
-  XLSX.writeFile(wb, '보일러품질설문_보고서_' + new Date().toISOString().slice(0,10) + '.xlsx');
-}
-
-function printReport() {
-  const content = document.getElementById('reportWrap').innerHTML;
-  let styleText = '';
-  document.querySelectorAll('style').forEach(s => { styleText += s.innerHTML; });
-  const win = window.open('', '_blank', 'width=900,height=700');
-  win.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>현장 품질 설문 결과 보고서</title><style>${styleText} body{padding:24px;font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;} .no-print{display:none!important;} @media print{.no-print{display:none!important;}}</style></head><body>${content}</body></html>`);
-  win.document.close();
-  win.focus();
-  setTimeout(() => { win.print(); }, 600);
-}
-
-async function downloadPPT() {
-  const btn = document.getElementById('pptDlBtn');
-  if (btn) { btn.textContent = '생성 중...'; btn.disabled = true; }
-  const all = await getFromStorage();
-  if (btn) { btn.textContent = '📊 PPT'; btn.disabled = false; }
-  if (all.length === 0) { alert('저장된 응답 데이터가 없습니다.'); return; }
-
-  const pres = new PptxGenJS();
-  pres.layout = 'LAYOUT_WIDE';
-  const NAVY = '1a3a6b', WHITE = 'FFFFFF', LIGHT = 'f0f4ff', GRAY = '555555';
-  const total = all.length;
-
-  function countKey(key) {
-    const counts = {};
-    all.forEach(r => {
-      (r[key] || '').split(', ').map(v => v.trim()).filter(Boolean).forEach(v => { counts[v] = (counts[v]||0)+1; });
-    });
-    return Object.entries(counts).sort((a,b) => b[1]-a[1]);
-  }
-  function avgStat(key) {
-    const vals = all.map(r => parseFloat(r[key])).filter(v => !isNaN(v) && v >= 0);
-    if (!vals.length) return null;
-    const sum = vals.reduce((s,v)=>s+v,0);
-    return { avg: (sum/vals.length).toFixed(1), sum, n: vals.length };
-  }
-  function pct(n, base) { return base > 0 ? Math.round(n/base*100) : 0; }
-
-  function titleSlide() {
-    const s = pres.addSlide();
-    s.background = { color: NAVY };
-    s.addText('현장 품질 설문 결과 보고서', { x: 0.5, y: 2.4, w: 12.3, h: 1.1, fontSize: 30, bold: true, color: WHITE, align: 'center' });
-    s.addText(`총 응답 ${total}건  •  ${new Date().toLocaleDateString('ko-KR')} 기준`, { x: 0.5, y: 3.7, w: 12.3, h: 0.6, fontSize: 15, color: 'aabbdd', align: 'center' });
-  }
-
-  function sectionSlide(badge, title, rows) {
-    const s = pres.addSlide();
-    s.addText(`${badge}  ${title}`, { x: 0, y: 0, w: 13.33, h: 0.85, fontSize: 17, bold: true, color: WHITE, fill: { color: NAVY }, valign: 'middle', margin: [0,0,0,18] });
-    if (!rows.length) { s.addText('데이터 없음', { x: 0.5, y: 1.2, w: 12.3, h: 0.5, fontSize: 13, color: GRAY }); return; }
-    const tableRows = rows.map(([label, val], i) => [
-      { text: label, options: { fontSize: 11, bold: true, color: '1a1a2e', fill: { color: i%2===0 ? 'f8f9fd' : LIGHT }, margin: [5,8,5,8] } },
-      { text: String(val), options: { fontSize: 11, color: NAVY, fill: { color: i%2===0 ? 'f8f9fd' : LIGHT }, margin: [5,8,5,8] } }
-    ]);
-    s.addTable(tableRows, { x: 0.4, y: 1.05, w: 12.5, colW: [6.0, 6.5], border: { pt: 0.5, color: 'e0e5f0' }, autoPage: true, autoPageLineWeight: 0.5 });
-  }
-
-  // 슬라이드 1: 타이틀
-  titleSlide();
-
-  // 슬라이드 2: A 기본정보
-  const dealers = all.map(r => r['A-1_대리점명']).filter(Boolean);
-  const jobs = countKey('A-2_직무');
-  sectionSlide('A', '기본 정보', [
-    ['총 응답 수', `${total}건`],
-    ['참여 대리점 (A-1)', dealers.join(' / ')],
-    ...jobs.map(([v,cnt]) => [`직무: ${v}`, `${cnt}명 (${pct(cnt,total)}%)`])
-  ]);
-
-  // 슬라이드 3: B 박스 젖음
-  const b25 = avgStat('B-2_젖음경험_2025년(대)');
-  const b26 = avgStat('B-2_젖음경험_2026년(대)');
-  const bScore = avgStat('B-3_심각도(1-5)');
-  const bTime = countKey('B-3_발견시점');
-  sectionSlide('B', '박스 젖음 현상', [
-    ['2025년 박스 젖음 경험 (평균)', b25 ? `${b25.avg}대 / 합계 ${b25.sum}대 (${b25.n}명 응답)` : '응답 없음'],
-    ['2026년 박스 젖음 경험 (평균)', b26 ? `${b26.avg}대 / 합계 ${b26.sum}대 (${b26.n}명 응답)` : '응답 없음'],
-    ['심각도 평가 (1~5점 평균)', bScore ? `${bScore.avg}점` : '응답 없음'],
-    ...bTime.slice(0,4).map(([v,cnt]) => [`발견시점: ${v}`, `${cnt}건 (${pct(cnt,total)}%)`])
-  ]);
-
-  // 슬라이드 4: C 영업 영향
-  const cScore = avgStat('C-1_영업영향_심각도(1-5)');
-  const cProb = countKey('C-2_발생문제');
-  sectionSlide('C', '영업 및 업무 영향도', [
-    ['영업 활동 영향 심각도 (평균)', cScore ? `${cScore.avg}점 / 5점` : '응답 없음'],
-    ...cProb.slice(0,6).map(([v,cnt]) => [`발생문제: ${v}`, `${cnt}건 (${pct(cnt,total)}%)`])
-  ]);
-
-  // 슬라이드 5: D 경쟁사
-  const d1 = countKey('D-1_경쟁사경험');
-  const dn = countKey('D-2_경동나비엔비교');
-  const dk = countKey('D-2_귀뚜라미비교');
-  const dl = countKey('D-2_린나이비교');
-  sectionSlide('D', '경쟁사 제품 비교', [
-    ...d1.slice(0,3).map(([v,cnt]) => [`경쟁사 경험: ${v}`, `${cnt}건 (${pct(cnt,total)}%)`]),
-    ...dn.slice(0,2).map(([v,cnt]) => [`경동나비엔 비교: ${v}`, `${cnt}건 (${pct(cnt,total)}%)`]),
-    ...dk.slice(0,2).map(([v,cnt]) => [`귀뚜라미 비교: ${v}`, `${cnt}건 (${pct(cnt,total)}%)`]),
-    ...dl.slice(0,2).map(([v,cnt]) => [`린나이 비교: ${v}`, `${cnt}건 (${pct(cnt,total)}%)`])
-  ]);
-
-  // 슬라이드 6: E CO경보기
-  const e1 = countKey('E-1_CO민원경험');
-  const e2 = countKey('E-2_민원발생시점');
-  const e3 = countKey('E-3_배터리사용기간');
-  const e4 = countKey('E-4_CO경보기제조사');
-  sectionSlide('E', 'CO 경보기 배터리', [
-    ...e1.map(([v,cnt]) => [`CO 민원 접수: ${v}`, `${cnt}건 (${pct(cnt,total)}%)`]),
-    ...e2.slice(0,2).map(([v,cnt]) => [`민원발생시점: ${v}`, `${cnt}건`]),
-    ...e3.slice(0,2).map(([v,cnt]) => [`배터리 사용기간: ${v}`, `${cnt}건 (${pct(cnt,total)}%)`]),
-    ...e4.slice(0,3).map(([v,cnt]) => [`CO경보기 제조사: ${v}`, `${cnt}건`])
-  ]);
-
-  // 슬라이드 7: F 조절기
-  const f1 = countKey('F-1_백라이트기능인지');
-  const f2 = avgStat('F-2_백라이트민원건수');
-  const f3 = countKey('F-3_희망백라이트시간');
-  const f4 = countKey('F-4_외출모드오인경험');
-  const f5 = countKey('F-5_외출모드개선필요성');
-  sectionSlide('F', 'DCR-81 / DCR-21B 조절기', [
-    ...f1.slice(0,2).map(([v,cnt]) => [`백라이트기능 인지: ${v}`, `${cnt}건 (${pct(cnt,total)}%)`]),
-    ['백라이트 민원건수 (평균)', f2 ? `${f2.avg}건 / 합계 ${f2.sum}건` : '응답 없음'],
-    ...f3.slice(0,2).map(([v,cnt]) => [`희망 백라이트 시간: ${v}`, `${cnt}건 (${pct(cnt,total)}%)`]),
-    ...f4.slice(0,2).map(([v,cnt]) => [`외출모드 오인경험: ${v}`, `${cnt}건 (${pct(cnt,total)}%)`]),
-    ...f5.slice(0,2).map(([v,cnt]) => [`외출모드 개선필요성: ${v}`, `${cnt}건 (${pct(cnt,total)}%)`])
-  ]);
-
-  // 슬라이드 8: G 기타의견
-  const opinions = all.map(r => r['G-1_기타의견']).filter(v => v && v.trim());
-  sectionSlide('G', '기타 의견', opinions.length
-    ? opinions.map((v, i) => [`의견 ${i+1}`, v.length > 90 ? v.slice(0,89)+'…' : v])
-    : [['기타 의견', '제출된 의견 없음']]
-  );
-
-  await pres.writeFile({ fileName: `보일러품질설문_보고서_${new Date().toISOString().slice(0,10)}.pptx` });
-}
-
 function clearData() {
   document.getElementById('clearPwInput').value = '';
   document.getElementById('clearPwErr').style.display = 'none';
@@ -1882,11 +1849,6 @@ async function renderReport() {
   }
 
   wrap.innerHTML = `
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:12px;" class="no-print">
-      <button id="rptDlBtn" onclick="downloadReportExcel()" style="background:#1a7a4e;color:white;border:none;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">📥 엑셀</button>
-      <button onclick="printReport()" style="background:#374151;color:white;border:none;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">🖨 인쇄</button>
-      <button id="pptDlBtn" onclick="downloadPPT()" style="background:#c05621;color:white;border:none;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">📊 PPT</button>
-    </div>
     <div style="background:#1a3a6b;border-radius:10px;padding:18px 20px;margin-bottom:20px;color:white;">
       <div style="font-size:15px;font-weight:600;margin-bottom:10px;">📋 현장 품질 설문 결과 보고서</div>
       <div style="display:flex;gap:28px;flex-wrap:wrap;">
@@ -1896,7 +1858,7 @@ async function renderReport() {
     </div>
 
     ${section('A','기본 정보',
-      qBlock('A-1','대리점명', (() => { const vals = all.map(r => r['A-1_대리점명']).filter(v => v && v.trim()); if (!vals.length) return '<div class="q-total">응답 없음</div>'; return `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">${vals.map(v=>`<span style="background:#eef2ff;color:#1a3a6b;border:1px solid #c5d0e8;border-radius:16px;padding:4px 12px;font-size:12.5px;font-weight:500;">${v}</span>`).join('')}</div><div class="q-total">총 ${vals.length}건</div>`; })()) +
+      qBlock('A-1','대리점명', textList('A-1_대리점명')) +
       qBlock('A-2','직무', radioBar('A-2_직무'))
     )}
     ${section('B','박스 젖음 현상',
@@ -1917,36 +1879,7 @@ async function renderReport() {
     )}
     ${section('E','CO 경보기 배터리',
       qBlock('E-1','CO 경보기 배터리 소진 민원 접수 여부', radioBar('E-1_CO민원경험')) +
-      qBlock('E-2','민원 발생 시점', (() => {
-        const PAST   = ['3년 이전 발생 / 현재 없음','2~3년 전 발생 / 현재 없음','1~2년 전 발생 / 현재 없음'];
-        const RECENT = ['6개월~1년 전부터 현재까지 지속','6개월 이내 발생 / 현재도 접수 중','최근 1개월 이내 새로 발생'];
-        const counts = {};
-        let answered = 0;
-        all.forEach(r => {
-          const v = r['E-2_민원발생시점'];
-          if (v && v.trim()) { answered++; v.split(', ').map(s=>s.trim()).filter(Boolean).forEach(s => { counts[s]=(counts[s]||0)+1; }); }
-        });
-        if (answered === 0) return '<div class="q-total">응답 없음</div>';
-        function barRows(keys) {
-          return keys.map((label, i) => {
-            const cnt = counts[label] || 0;
-            const p = pctOf(cnt, answered);
-            const cls = i===0?'':i===1?'accent':'green';
-            return `<div class="q-bar-row"><div class="q-bar-label" title="${label}">${label.length>32?label.slice(0,31)+'…':label}</div><div class="q-bar-wrap"><div class="q-bar-fill ${cls}" style="width:${p}%"></div></div><div class="q-bar-stats">${cnt}건 (${p}%)</div></div>`;
-          }).join('');
-        }
-        const pastTotal   = PAST.reduce((s,k)=>s+(counts[k]||0),0);
-        const recentTotal = RECENT.reduce((s,k)=>s+(counts[k]||0),0);
-        return `<div style="margin-bottom:10px;">
-          <div style="font-size:12px;font-weight:700;color:#92400e;background:#fff7ed;border-left:3px solid #f59e0b;padding:4px 10px;border-radius:4px;margin-bottom:6px;">▸ 과거 민원 (현재는 없음) — ${pastTotal}건</div>
-          ${barRows(PAST)}
-        </div>
-        <div>
-          <div style="font-size:12px;font-weight:700;color:#1e3a8a;background:#eff6ff;border-left:3px solid #3b82f6;padding:4px 10px;border-radius:4px;margin-bottom:6px;">▸ 최근 민원 (현재 진행 중) — ${recentTotal}건</div>
-          ${barRows(RECENT)}
-        </div>
-        <div class="q-total">응답 ${answered}건 / 전체 ${total}건</div>`;
-      })()) +
+      qBlock('E-2','민원 발생 시점', checkboxBar('E-2_민원발생시점')) +
       qBlock('E-3','고객 체감 배터리 사용 기간', radioBar('E-3_배터리사용기간')) +
       qBlock('E-4','CO 경보기 제조업체', checkboxBar('E-4_CO경보기제조사'))
     )}
@@ -2075,8 +2008,106 @@ document.querySelectorAll('input[name="adm_job"]').forEach(el => el.addEventList
 document.querySelectorAll('input[name="adm_f3"]').forEach(el => el.addEventListener('change', function() {
   document.getElementById('adm_f3_etc').style.display = this.value === '기타' ? 'block' : 'none';
 }));
+
+/* ── 설문 통합 탭 관리 ── */
+const HUB_KEY = 'survey_hub_tabs_v1';
+let hubActiveId = 'boiler';
+
+function hubLoad() { try { return JSON.parse(localStorage.getItem(HUB_KEY)) || []; } catch(e) { return []; } }
+function hubSave(list) { localStorage.setItem(HUB_KEY, JSON.stringify(list)); }
+
+function hubSwitch(id) {
+  document.querySelectorAll('.hub-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.hub-pane').forEach(p => p.classList.remove('active'));
+  const tab = document.querySelector(`.hub-tab[data-id="${id}"]`);
+  const pane = document.getElementById(`hub-pane-${id}`);
+  if (tab) tab.classList.add('active');
+  if (pane) pane.classList.add('active');
+  hubActiveId = id;
+}
+
+function hubRender(survey) {
+  const bar = document.getElementById('hubTabBar');
+  const addBtn = document.getElementById('hubAddBtn');
+
+  const tab = document.createElement('div');
+  tab.className = 'hub-tab';
+  tab.dataset.id = survey.id;
+  tab.innerHTML = `<span>${survey.icon}</span><span>${survey.name}</span><button class="hub-tab-close" title="탭 삭제" onclick="hubRemove('${survey.id}',event)">✕</button>`;
+  tab.addEventListener('click', () => hubSwitch(survey.id));
+  bar.insertBefore(tab, addBtn);
+
+  const pane = document.createElement('div');
+  pane.className = 'hub-pane';
+  pane.id = `hub-pane-${survey.id}`;
+  pane.innerHTML = `<iframe src="${survey.url}" title="${survey.name}" allowfullscreen></iframe>`;
+  document.body.appendChild(pane);
+}
+
+function hubRemove(id, e) {
+  e.stopPropagation();
+  if (!confirm('이 설문지를 목록에서 제거하시겠습니까?')) return;
+  hubSave(hubLoad().filter(s => s.id !== id));
+  document.querySelector(`.hub-tab[data-id="${id}"]`)?.remove();
+  document.getElementById(`hub-pane-${id}`)?.remove();
+  if (hubActiveId === id) hubSwitch('boiler');
+  hubShowToast('설문지가 삭제되었습니다.');
+}
+
+function hubOpenModal() {
+  ['hubFName','hubFUrl','hubFIcon'].forEach(id => document.getElementById(id).value = '');
+  ['hubErrName','hubErrUrl'].forEach(id => document.getElementById(id).classList.remove('show'));
+  ['hubFName','hubFUrl'].forEach(id => document.getElementById(id).classList.remove('hub-err-border'));
+  document.getElementById('hubOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('hubFName').focus(), 80);
+}
+
+function hubCloseModal() { document.getElementById('hubOverlay').classList.remove('open'); }
+
+function hubConfirmAdd() {
+  const name = document.getElementById('hubFName').value.trim();
+  const url  = document.getElementById('hubFUrl').value.trim();
+  const icon = document.getElementById('hubFIcon').value.trim() || '📋';
+  let ok = true;
+
+  function setE(fid, eid, show) {
+    document.getElementById(fid).classList.toggle('hub-err-border', show);
+    document.getElementById(eid).classList.toggle('show', show);
+    if (show) ok = false;
+  }
+  setE('hubFName', 'hubErrName', !name);
+  setE('hubFUrl', 'hubErrUrl', !url || !/^https?:\/\/.+/.test(url));
+  if (!ok) return;
+
+  const survey = { id: `hs_${Date.now()}`, name, url, icon };
+  const list = hubLoad();
+  list.push(survey);
+  hubSave(list);
+  hubRender(survey);
+  hubCloseModal();
+  hubSwitch(survey.id);
+  hubShowToast(`"${name}" 설문지가 추가되었습니다.`);
+}
+
+let hubToastTimer;
+function hubShowToast(msg) {
+  const el = document.getElementById('hubToast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(hubToastTimer);
+  hubToastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+}
+
+document.getElementById('hubOverlay').addEventListener('click', function(e) {
+  if (e.target === this) hubCloseModal();
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && document.getElementById('hubOverlay').classList.contains('open')) hubCloseModal();
+});
+
+// 저장된 탭 복원
+hubLoad().forEach(s => hubRender(s));
 </script>
 </body>
 </html>
-
 
