@@ -72,29 +72,6 @@
     }
   };
 
-  // Hub 설문지 목록 관리
-  window.hubFirestoreGetAll = async function() {
-    try {
-      const q = query(collection(db, "hub_surveys"), orderBy("_addedAt", "asc"));
-      const snap = await getDocs(q);
-      return snap.docs.map(d => ({ _docId: d.id, ...d.data() }));
-    } catch(e) { console.error("hub_surveys 조회 오류:", e); return []; }
-  };
-
-  window.hubFirestoreAdd = async function(survey) {
-    try {
-      const ref = await addDoc(collection(db, "hub_surveys"), { ...survey, _addedAt: serverTimestamp() });
-      return ref.id;
-    } catch(e) { console.error("hub_surveys 저장 오류:", e); return null; }
-  };
-
-  window.hubFirestoreDelete = async function(docId) {
-    try {
-      await deleteDoc(doc(db, "hub_surveys", docId));
-      return true;
-    } catch(e) { console.error("hub_surveys 삭제 오류:", e); return false; }
-  };
-
   console.log("Firebase 초기화 완료");
 </script>
 <style>
@@ -259,6 +236,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD G
 }
 .hub-tab:hover { color: white; background: rgba(255,255,255,0.08); }
 .hub-tab.active { color: white; border-bottom-color: #64b5f6; background: rgba(255,255,255,0.1); }
+.hub-tab.dragging { opacity: 0.35; cursor: grabbing; }
+.hub-tab.drag-over-left { border-left: 3px solid #64b5f6; }
+.hub-tab.drag-over-right { border-right: 3px solid #64b5f6; }
 .hub-badge {
   background: rgba(255,255,255,0.22);
   color: white;
@@ -354,34 +334,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD G
   transition: all 0.25s; z-index: 600; pointer-events: none;
 }
 .hub-toast.show { opacity: 1; transform: translateY(0); }
-
-#printArea { display: none; }
-@media print {
-  body * { visibility: hidden; }
-  #printArea, #printArea * { visibility: visible; }
-  #printArea {
-    display: block !important;
-    position: fixed; left: 0; top: 0; width: 100%;
-    padding: 24px; background: white; font-size: 13px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    color: #1a1a1a;
-  }
-  .pr-sec-title { font-size: 11px; font-weight: 700; color: #1a3a6b; text-transform: uppercase;
-    letter-spacing: .05em; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1.5px solid #dde3f0; }
-  .pr-section { margin-bottom: 16px; }
-  .pr-table { width: 100%; border-collapse: collapse; }
-  .pr-table tr { border-bottom: .5px solid #eee; }
-  .pr-table tr:last-child { border-bottom: none; }
-  .pr-table td { padding: 5px 8px; vertical-align: top; font-size: 13px; line-height: 1.6; }
-  .pr-table td.lbl { width: 200px; color: #666; font-weight: 500; }
-}
 </style>
 </head>
 <body>
 
 <!-- ── 설문 통합 탭 바 ── -->
 <div class="hub-tab-bar" id="hubTabBar">
-  <div class="hub-tab active" data-id="boiler" onclick="hubSwitch('boiler')">
+  <div class="hub-tab active" data-id="boiler" draggable="true" onclick="hubSwitch('boiler')" style="cursor:grab">
     <span>🔥</span>
     <span>현장 품질 조사</span>
     <span class="hub-badge">기본</span>
@@ -1487,7 +1446,6 @@ async function renderAdminStats() {
 }
 
 /* ── 테이블 렌더링 ── */
-let _filteredRows = [];
 const COL_LABELS = [
   ['제출일시','제출일시'],['A-1_대리점명','대리점명'],['A-2_직무','직무'],
   ['B-2_젖음경험_2025년(대)','B-1 2025년(대)'],['B-2_젖음경험_2026년(대)','B-1 2026년(대)'],['B-3_발견시점','B-2 발견시점'],
@@ -1510,10 +1468,9 @@ async function renderTable() {
     return;
   }
 
-  _filteredRows = filtered;
   let html = '<table class="resp-table"><thead><tr><th>#</th>';
   COL_LABELS.forEach(([,label]) => { html += `<th>${label}</th>`; });
-  html += '<th>관리</th></tr></thead><tbody>';
+  html += '<th>삭제</th></tr></thead><tbody>';
 
   filtered.forEach((row, num) => {
     const docId = row._docId || '';
@@ -1524,7 +1481,7 @@ async function renderTable() {
       const cls = key === 'G-1_기타의견' ? 'long' : '';
       html += `<td class="${cls}" title="${String(v).replace(/"/g,"'")}">${v}</td>`;
     });
-    html += `<td style="white-space:nowrap"><button class="del-row-btn" style="background:#1a3a6b;color:#fff;margin-right:4px" onclick="printRow(${num})">🖨 인쇄</button><button class="del-row-btn" onclick="deleteRow('${docId}')">삭제</button></td>`;
+    html += `<td><button class="del-row-btn" onclick="deleteRow('${docId}')">삭제</button></td>`;
     html += `</tr>`;
   });
   html += '</tbody></table>';
@@ -1542,60 +1499,6 @@ async function deleteRow(docId) {
   }
   await renderAdminStats();
   await renderTable();
-}
-
-function printRow(idx) {
-  const row = _filteredRows[idx];
-  if (!row) return;
-  const sections = [
-    { title: 'A. 기본 정보', fields: [['A-1_대리점명','대리점명'],['A-2_직무','직무'],['제출일시','제출일시']] },
-    { title: 'B. 박스 젖음 현상', fields: [
-      ['B-2_젖음경험_2025년(대)','B-1 2025년 젖음 건수(대)'],
-      ['B-2_젖음경험_2026년(대)','B-1 2026년 젖음 건수(대)'],
-      ['B-3_발견시점','B-2 발견 시점'],['B-3_심각도(1-5)','B-3 심각도(1~5)']
-    ]},
-    { title: 'C. 영업 영향도', fields: [
-      ['C-1_영업영향_심각도(1-5)','C-1 영업 영향 심각도(1~5)'],['C-2_발생문제','C-2 발생 문제']
-    ]},
-    { title: 'D. 경쟁사 비교', fields: [
-      ['D-1_경쟁사경험','D-1 경쟁사 취급 경험'],
-      ['D-2_경동나비엔비교','D-2 경동나비엔 A/S 비교'],
-      ['D-2_귀뚜라미비교','D-2 귀뚜라미 A/S 비교'],['D-2_린나이비교','D-2 린나이 A/S 비교']
-    ]},
-    { title: 'E. CO 경보기 배터리', fields: [
-      ['E-1_CO민원경험','E-1 CO 민원 경험'],['E-2_민원발생시점','E-2 민원 발생 시점'],
-      ['E-3_배터리사용기간','E-3 배터리 사용 기간'],['E-4_CO경보기제조사','E-4 CO 경보기 제조사']
-    ]},
-    { title: 'F. 조절기 기능', fields: [
-      ['F-1_백라이트기능인지','F-1 백라이트 기능 인지'],['F-2_백라이트민원건수','F-2 백라이트 민원 건수'],
-      ['F-3_희망백라이트시간','F-3 희망 백라이트 시간'],
-      ['F-4_외출모드오인경험','F-4 외출 모드 오인 경험'],['F-5_외출모드개선필요성','F-5 외출 모드 개선 필요성']
-    ]},
-    { title: 'G. 기타 의견', fields: [['G-1_기타의견','G-1 기타 의견']] }
-  ];
-  const bodyHtml = sections.map(sec=>`
-    <div class="pr-section">
-      <div class="pr-sec-title">${sec.title}</div>
-      <table class="pr-table"><tbody>
-        ${sec.fields.map(([key,label])=>`<tr><td class="lbl">${row[key]||'-'}</td><td class="lbl" style="color:#1a1a1a;font-weight:400">${row[key]||'-'}</td></tr>`).join('')}
-      </tbody></table>
-    </div>`).join('');
-
-  const area = document.getElementById('printArea');
-  area.innerHTML = `
-    <h2 style="font-size:17px;color:#1a3a6b;margin-bottom:4px">📋 현장 품질 조사 응답</h2>
-    <div style="font-size:12px;color:#666;margin-bottom:20px;padding-bottom:10px;border-bottom:2px solid #1a3a6b">
-      대리점: <strong>${row['A-1_대리점명']||'-'}</strong> &nbsp;|&nbsp; 제출: ${row['제출일시']||'-'}
-    </div>
-    ${sections.map(sec=>`
-      <div class="pr-section">
-        <div class="pr-sec-title">${sec.title}</div>
-        <table class="pr-table"><tbody>
-          ${sec.fields.map(([key,label])=>`<tr><td class="lbl">${label}</td><td>${row[key]||'-'}</td></tr>`).join('')}
-        </tbody></table>
-      </div>`).join('')}`;
-  window.print();
-  area.innerHTML = '';
 }
 
 /* ── scale ── */
@@ -2121,9 +2024,30 @@ document.querySelectorAll('input[name="adm_f3"]').forEach(el => el.addEventListe
 /* ── 설문 통합 탭 관리 ── */
 let hubActiveId = 'boiler';
 
+function hubLoad() {
+  try {
+    const s = new URLSearchParams(window.location.search).get('s');
+    if (!s) return [];
+    const b64 = s.replace(/-/g, '+').replace(/_/g, '/') + '=='.slice(0, (4 - s.length % 4) % 4);
+    return JSON.parse(decodeURIComponent(atob(b64)));
+  } catch(e) { return []; }
+}
+function hubSave(list) {
+  try {
+    const b64url = btoa(encodeURIComponent(JSON.stringify(list)))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    const url = new URL(window.location.href);
+    if (list.length > 0) {
+      url.searchParams.set('s', b64url);
+    } else {
+      url.searchParams.delete('s');
+    }
+    history.replaceState(null, '', url.toString());
+  } catch(e) {}
+}
 function hubCopyLink() {
-  const href = location.origin + location.pathname;
-  const copy = () => hubShowToast('🔗 링크가 복사되었습니다!');
+  const href = window.location.href;
+  const copy = () => { hubShowToast('🔗 공유 링크가 복사되었습니다!'); };
   if (navigator.clipboard) {
     navigator.clipboard.writeText(href).then(copy).catch(() => {
       const ta = document.createElement('textarea');
@@ -2154,7 +2078,8 @@ function hubRender(survey) {
   const tab = document.createElement('div');
   tab.className = 'hub-tab';
   tab.dataset.id = survey.id;
-  if (survey._docId) tab.dataset.docId = survey._docId;
+  tab.draggable = true;
+  tab.style.cursor = 'grab';
   tab.innerHTML = `<span>${survey.icon}</span><span>${survey.name}</span><button class="hub-tab-close" title="탭 삭제" onclick="hubRemove('${survey.id}',event)">✕</button>`;
   tab.addEventListener('click', () => hubSwitch(survey.id));
   bar.insertBefore(tab, addBtn);
@@ -2169,10 +2094,8 @@ function hubRender(survey) {
 function hubRemove(id, e) {
   e.stopPropagation();
   if (!confirm('이 설문지를 목록에서 제거하시겠습니까?')) return;
-  const tab = document.querySelector(`.hub-tab[data-id="${id}"]`);
-  const docId = tab?.dataset.docId;
-  if (docId && window.hubFirestoreDelete) window.hubFirestoreDelete(docId);
-  tab?.remove();
+  hubSave(hubLoad().filter(s => s.id !== id));
+  document.querySelector(`.hub-tab[data-id="${id}"]`)?.remove();
   document.getElementById(`hub-pane-${id}`)?.remove();
   if (hubActiveId === id) hubSwitch('boiler');
   hubShowToast('설문지가 삭제되었습니다.');
@@ -2188,7 +2111,7 @@ function hubOpenModal() {
 
 function hubCloseModal() { document.getElementById('hubOverlay').classList.remove('open'); }
 
-async function hubConfirmAdd() {
+function hubConfirmAdd() {
   const name = document.getElementById('hubFName').value.trim();
   const url  = document.getElementById('hubFUrl').value.trim();
   const icon = document.getElementById('hubFIcon').value.trim() || '📋';
@@ -2204,12 +2127,11 @@ async function hubConfirmAdd() {
   if (!ok) return;
 
   const survey = { id: `hs_${Date.now()}`, name, url, icon };
-  hubCloseModal();
-  if (window.hubFirestoreAdd) {
-    const docId = await window.hubFirestoreAdd(survey);
-    if (docId) survey._docId = docId;
-  }
+  const list = hubLoad();
+  list.push(survey);
+  hubSave(list);
   hubRender(survey);
+  hubCloseModal();
   hubSwitch(survey.id);
   hubShowToast(`"${name}" 설문지가 추가되었습니다.`);
 }
@@ -2230,14 +2152,93 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape' && document.getElementById('hubOverlay').classList.contains('open')) hubCloseModal();
 });
 
-// Firestore에서 설문지 목록 복원
-(async function hubInit() {
-  if (!window.hubFirestoreGetAll) { setTimeout(hubInit, 300); return; }
-  const surveys = await window.hubFirestoreGetAll();
-  surveys.forEach(s => hubRender(s));
-})();
+/* ── 탭 순서 저장/복원 ── */
+const HUB_ORDER_KEY = 'hub_tab_order';
+
+function hubSaveOrder() {
+  const ids = [...document.querySelectorAll('#hubTabBar .hub-tab')].map(t => t.dataset.id);
+  localStorage.setItem(HUB_ORDER_KEY, JSON.stringify(ids));
+  // URL의 동적 탭 순서도 동기화
+  const dynamicIds = ids.filter(id => id !== 'boiler');
+  const all = hubLoad();
+  hubSave(dynamicIds.map(id => all.find(s => s.id === id)).filter(Boolean));
+}
+
+function hubApplyOrder() {
+  const saved = JSON.parse(localStorage.getItem(HUB_ORDER_KEY) || '[]');
+  if (!saved.length) return;
+  const bar = document.getElementById('hubTabBar');
+  const addBtn = document.getElementById('hubAddBtn');
+  saved.forEach(id => {
+    const tab = document.querySelector(`#hubTabBar .hub-tab[data-id="${id}"]`);
+    if (tab) bar.insertBefore(tab, addBtn);
+  });
+}
+
+/* ── 드래그&드롭으로 탭 순서 변경 ── */
+function hubInitDrag() {
+  const bar = document.getElementById('hubTabBar');
+
+  bar.addEventListener('dragstart', e => {
+    const tab = e.target.closest('.hub-tab');
+    if (!tab) { e.preventDefault(); return; }
+    if (e.target.closest('.hub-tab-close')) { e.preventDefault(); return; }
+    e.dataTransfer.setData('text/plain', tab.dataset.id);
+    e.dataTransfer.effectAllowed = 'move';
+    setTimeout(() => tab.classList.add('dragging'), 0);
+  });
+
+  bar.addEventListener('dragend', e => {
+    document.querySelectorAll('.hub-tab').forEach(t => {
+      t.classList.remove('dragging', 'drag-over-left', 'drag-over-right');
+    });
+  });
+
+  bar.addEventListener('dragover', e => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const tab = e.target.closest('.hub-tab');
+    document.querySelectorAll('.hub-tab').forEach(t => t.classList.remove('drag-over-left', 'drag-over-right'));
+    if (tab && !tab.classList.contains('dragging')) {
+      const rect = tab.getBoundingClientRect();
+      if (e.clientX < rect.left + rect.width / 2) {
+        tab.classList.add('drag-over-left');
+      } else {
+        tab.classList.add('drag-over-right');
+      }
+    }
+  });
+
+  bar.addEventListener('dragleave', e => {
+    if (!bar.contains(e.relatedTarget)) {
+      document.querySelectorAll('.hub-tab').forEach(t => t.classList.remove('drag-over-left', 'drag-over-right'));
+    }
+  });
+
+  bar.addEventListener('drop', e => {
+    e.preventDefault();
+    const draggedId = e.dataTransfer.getData('text/plain');
+    const draggedTab = document.querySelector(`#hubTabBar .hub-tab[data-id="${draggedId}"]`);
+    const targetTab = e.target.closest('.hub-tab');
+    document.querySelectorAll('.hub-tab').forEach(t => t.classList.remove('drag-over-left', 'drag-over-right'));
+    if (!draggedTab || !targetTab || draggedTab === targetTab) return;
+
+    const addBtn = document.getElementById('hubAddBtn');
+    const rect = targetTab.getBoundingClientRect();
+    if (e.clientX > rect.left + rect.width / 2) {
+      bar.insertBefore(draggedTab, targetTab.nextSibling || addBtn);
+    } else {
+      bar.insertBefore(draggedTab, targetTab);
+    }
+    hubSaveOrder();
+  });
+}
+
+// 저장된 탭 복원
+hubLoad().forEach(s => hubRender(s));
+hubApplyOrder();
+hubInitDrag();
 </script>
-<div id="printArea"></div>
 </body>
 </html>
 
