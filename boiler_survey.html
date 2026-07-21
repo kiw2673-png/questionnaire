@@ -2245,8 +2245,11 @@ function hubInitDrag() {
   });
 }
 
-// 저장된 탭 복원
-hubLoad().forEach(s => hubRender(s));
+// 저장된 탭 복원 (URL 또는 localStorage)
+const _initTabs = hubLoad();
+_initTabs.forEach(s => hubRender(s));
+// localStorage에서 복원된 경우에도 URL을 항상 동기화 → 공유 링크에 탭 정보 포함
+if (_initTabs.length > 0) hubSave(_initTabs);
 hubApplyOrder();
 hubInitDrag();
 </script>
