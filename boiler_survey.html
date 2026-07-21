@@ -2024,16 +2024,27 @@ document.querySelectorAll('input[name="adm_f3"]').forEach(el => el.addEventListe
 /* ── 설문 통합 탭 관리 ── */
 let hubActiveId = 'boiler';
 
+const HUB_TABS_KEY = 'hub_tabs_list';
+
 function hubLoad() {
   try {
     const s = new URLSearchParams(window.location.search).get('s');
-    if (!s) return [];
-    const b64 = s.replace(/-/g, '+').replace(/_/g, '/') + '=='.slice(0, (4 - s.length % 4) % 4);
-    return JSON.parse(decodeURIComponent(atob(b64)));
+    if (s) {
+      const b64 = s.replace(/-/g, '+').replace(/_/g, '/') + '=='.slice(0, (4 - s.length % 4) % 4);
+      const list = JSON.parse(decodeURIComponent(atob(b64)));
+      // URL에 있으면 localStorage에도 백업
+      localStorage.setItem(HUB_TABS_KEY, JSON.stringify(list));
+      return list;
+    }
+    // URL에 없으면 localStorage에서 복원
+    const stored = localStorage.getItem(HUB_TABS_KEY);
+    return stored ? JSON.parse(stored) : [];
   } catch(e) { return []; }
 }
 function hubSave(list) {
   try {
+    // localStorage에 항상 백업
+    localStorage.setItem(HUB_TABS_KEY, JSON.stringify(list));
     const b64url = btoa(encodeURIComponent(JSON.stringify(list)))
       .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
     const url = new URL(window.location.href);
