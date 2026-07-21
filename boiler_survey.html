@@ -72,6 +72,29 @@
     }
   };
 
+  // Hub 설문지 목록 관리
+  window.hubFirestoreGetAll = async function() {
+    try {
+      const q = query(collection(db, "hub_surveys"), orderBy("_addedAt", "asc"));
+      const snap = await getDocs(q);
+      return snap.docs.map(d => ({ _docId: d.id, ...d.data() }));
+    } catch(e) { console.error("hub_surveys 조회 오류:", e); return []; }
+  };
+
+  window.hubFirestoreAdd = async function(survey) {
+    try {
+      const ref = await addDoc(collection(db, "hub_surveys"), { ...survey, _addedAt: serverTimestamp() });
+      return ref.id;
+    } catch(e) { console.error("hub_surveys 저장 오류:", e); return null; }
+  };
+
+  window.hubFirestoreDelete = async function(docId) {
+    try {
+      await deleteDoc(doc(db, "hub_surveys", docId));
+      return true;
+    } catch(e) { console.error("hub_surveys 삭제 오류:", e); return false; }
+  };
+
   console.log("Firebase 초기화 완료");
 </script>
 <style>
@@ -2021,25 +2044,9 @@ document.querySelectorAll('input[name="adm_f3"]').forEach(el => el.addEventListe
 /* ── 설문 통합 탭 관리 ── */
 let hubActiveId = 'boiler';
 
-function hubLoad() {
-  try {
-    const hash = window.location.hash;
-    if (!hash.startsWith('#s=')) return [];
-    return JSON.parse(decodeURIComponent(hash.slice(3)));
-  } catch(e) { return []; }
-}
-function hubSave(list) {
-  try {
-    if (list.length > 0) {
-      history.replaceState(null, '', '#s=' + encodeURIComponent(JSON.stringify(list)));
-    } else {
-      history.replaceState(null, '', window.location.pathname + window.location.search);
-    }
-  } catch(e) {}
-}
 function hubCopyLink() {
-  const href = window.location.href;
-  const copy = () => { hubShowToast('🔗 공유 링크가 복사되었습니다!'); };
+  const href = location.origin + location.pathname;
+  const copy = () => hubShowToast('🔗 링크가 복사되었습니다!');
   if (navigator.clipboard) {
     navigator.clipboard.writeText(href).then(copy).catch(() => {
       const ta = document.createElement('textarea');
@@ -2070,6 +2077,7 @@ function hubRender(survey) {
   const tab = document.createElement('div');
   tab.className = 'hub-tab';
   tab.dataset.id = survey.id;
+  if (survey._docId) tab.dataset.docId = survey._docId;
   tab.innerHTML = `<span>${survey.icon}</span><span>${survey.name}</span><button class="hub-tab-close" title="탭 삭제" onclick="hubRemove('${survey.id}',event)">✕</button>`;
   tab.addEventListener('click', () => hubSwitch(survey.id));
   bar.insertBefore(tab, addBtn);
@@ -2084,8 +2092,10 @@ function hubRender(survey) {
 function hubRemove(id, e) {
   e.stopPropagation();
   if (!confirm('이 설문지를 목록에서 제거하시겠습니까?')) return;
-  hubSave(hubLoad().filter(s => s.id !== id));
-  document.querySelector(`.hub-tab[data-id="${id}"]`)?.remove();
+  const tab = document.querySelector(`.hub-tab[data-id="${id}"]`);
+  const docId = tab?.dataset.docId;
+  if (docId && window.hubFirestoreDelete) window.hubFirestoreDelete(docId);
+  tab?.remove();
   document.getElementById(`hub-pane-${id}`)?.remove();
   if (hubActiveId === id) hubSwitch('boiler');
   hubShowToast('설문지가 삭제되었습니다.');
@@ -2101,7 +2111,7 @@ function hubOpenModal() {
 
 function hubCloseModal() { document.getElementById('hubOverlay').classList.remove('open'); }
 
-function hubConfirmAdd() {
+async function hubConfirmAdd() {
   const name = document.getElementById('hubFName').value.trim();
   const url  = document.getElementById('hubFUrl').value.trim();
   const icon = document.getElementById('hubFIcon').value.trim() || '📋';
@@ -2117,11 +2127,12 @@ function hubConfirmAdd() {
   if (!ok) return;
 
   const survey = { id: `hs_${Date.now()}`, name, url, icon };
-  const list = hubLoad();
-  list.push(survey);
-  hubSave(list);
-  hubRender(survey);
   hubCloseModal();
+  if (window.hubFirestoreAdd) {
+    const docId = await window.hubFirestoreAdd(survey);
+    if (docId) survey._docId = docId;
+  }
+  hubRender(survey);
   hubSwitch(survey.id);
   hubShowToast(`"${name}" 설문지가 추가되었습니다.`);
 }
@@ -2142,8 +2153,12 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape' && document.getElementById('hubOverlay').classList.contains('open')) hubCloseModal();
 });
 
-// 저장된 탭 복원
-hubLoad().forEach(s => hubRender(s));
+// Firestore에서 설문지 목록 복원
+(async function hubInit() {
+  if (!window.hubFirestoreGetAll) { setTimeout(hubInit, 300); return; }
+  const surveys = await window.hubFirestoreGetAll();
+  surveys.forEach(s => hubRender(s));
+})();
 </script>
 </body>
 </html>
