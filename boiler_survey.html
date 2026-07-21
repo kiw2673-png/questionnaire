@@ -264,6 +264,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD G
   font-size: 22px; transition: color 0.18s; flex-shrink: 0;
 }
 .hub-tab-add:hover { color: white; }
+.hub-tab-copy {
+  display: flex; align-items: center; gap: 4px;
+  padding: 0 12px; cursor: pointer;
+  color: rgba(255,255,255,0.45);
+  font-size: 13px; transition: color 0.18s; flex-shrink: 0;
+  border-left: 1px solid rgba(255,255,255,0.1);
+}
+.hub-tab-copy:hover { color: #64b5f6; }
 .hub-pane { display: none; }
 .hub-pane.active { display: block; }
 .hub-pane iframe { width: 100%; height: calc(100vh - 46px); border: none; display: block; }
@@ -335,6 +343,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD G
     <span class="hub-badge">기본</span>
   </div>
   <div class="hub-tab-add" id="hubAddBtn" onclick="hubOpenModal()" title="설문지 추가">＋</div>
+  <div class="hub-tab-copy" id="hubCopyBtn" onclick="hubCopyLink()" title="현재 설문지 목록이 담긴 링크 복사">🔗 링크 복사</div>
 </div>
 
 <!-- ── 현장 품질 조사 탭 패널 ── -->
@@ -2010,11 +2019,41 @@ document.querySelectorAll('input[name="adm_f3"]').forEach(el => el.addEventListe
 }));
 
 /* ── 설문 통합 탭 관리 ── */
-const HUB_KEY = 'survey_hub_tabs_v1';
 let hubActiveId = 'boiler';
 
-function hubLoad() { try { return JSON.parse(localStorage.getItem(HUB_KEY)) || []; } catch(e) { return []; } }
-function hubSave(list) { localStorage.setItem(HUB_KEY, JSON.stringify(list)); }
+function hubLoad() {
+  try {
+    const s = new URLSearchParams(window.location.search).get('s');
+    if (!s) return [];
+    return JSON.parse(decodeURIComponent(atob(s)));
+  } catch(e) { return []; }
+}
+function hubSave(list) {
+  try {
+    const url = new URL(window.location.href);
+    if (list.length > 0) {
+      url.searchParams.set('s', btoa(encodeURIComponent(JSON.stringify(list))));
+    } else {
+      url.searchParams.delete('s');
+    }
+    history.replaceState(null, '', url.toString());
+  } catch(e) {}
+}
+function hubCopyLink() {
+  const href = window.location.href;
+  const copy = () => { hubShowToast('🔗 공유 링크가 복사되었습니다!'); };
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(href).then(copy).catch(() => {
+      const ta = document.createElement('textarea');
+      ta.value = href; document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta); copy();
+    });
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = href; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta); copy();
+  }
+}
 
 function hubSwitch(id) {
   document.querySelectorAll('.hub-tab').forEach(t => t.classList.remove('active'));
